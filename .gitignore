@@ -1,0 +1,21 @@
+# Bundler config and Bundler-installed gems
+.bundle
+vendor/bundler
+
+# Generated configs
+config/environment.rb
+
+# The usual suspects
+Thumbs.db
+Desktop.ini
+__MACOSX
+.DS_Store
+*.tmproj
+*.swp
+*~
+*.bak
+*.sqlite
+*.sql
+*.psd
+*.db
+doc/
