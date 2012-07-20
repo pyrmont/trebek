@@ -3,14 +3,11 @@ Trebek
 
 Trebek is an elegant way to run surveys and questionnaires.
 
-As a convention that frequently interacts with its attendees we're forever running into situations where we just want a simple way to run a survey. Unfortunately, most of the free solutions out there look awful. We wanted something that maintained the visual standards of SMASH! while at the same time not costing us an arm and a leg. Using the excellent  [Surveyor](https://github.com/NUBIC/surveyor) gem, Trebek is a Rails application that makes it easy to create questionnaires that look good and work great.
+Do you want to write a survey in a simple plain text file and have an HTML form come out the other end? Trebek does that.
 
+Do you want to be able to take the content of an HTML form and process that? Trebek does that, too.
 
-Caveats
--------
-
-Trebek is being developed for internal use. We wanted to develop it in the open and hope to produce something that is a little more general-purpose in time. For the moment, please mind the mess. 
-
+Do you want to be able to see the results of your surveys? Trebek to the rescue again.
 
 Licence
 -------
