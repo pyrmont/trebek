@@ -11,9 +11,12 @@ class Parser
 
 	def parse
 		# while lines have a line
-			# determine type of line
+		@data.each_line do |line|
+			puts 'The line is ' + line
 			# if line is a survey
+			if line.match(/^Survey/)
 				# create survey
+				# puts 'Creating survey object...'
 				# add to array of surveys
 				# if survey param unset
 					# set to survey param
@@ -38,11 +41,12 @@ class Parser
 					# add to survey's children
 				# else
 					# raise error ('You have forgotten to create a group or you have closed too many groups.')
+			end
 			# else if line is a table
 				# create table
 				# if survey param set
 					# add to survey's children
-				else
+				# else
 					# raise error ('You haven't created a survey but you're trying to close one.')
 				# if table param unset
 					# set to table param
@@ -77,6 +81,6 @@ class Parser
 					# unset question param
 				# if question's question or heading is unset
 					# raise error ('You have forgotten to write a question or a heading to identify this question.')
-		# endwhile
+		end
 	end
 end
