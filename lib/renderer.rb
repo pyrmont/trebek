@@ -14,45 +14,80 @@ class Renderer
 	end
 
 	def render
+		html = ''
+
 		@surveys.each do |survey|
 			# render survey HTML
-			survey_html survey
+			html += survey_html survey
 		end
 
+		return html
 	end
 
 	def survey_html(survey)
-		puts Mustache.render(@tag.survey_open, :id => (spaces_to_underscores survey.name))
+		html = Mustache.render(@tag.survey_open, :id => (spaces_to_underscores survey.name))
 		survey.elements.each do |element|
 			if element.class == Table
-				# table_html element
+				html += table_html element
 			# if child is question
 			elsif element.class == Question
-				question_html element
+				html += question_html element
 			# if child is hr
 				# render hr HTML
 			# if child is group
 			elsif element.class == Group
 				if element.type == :open
-					puts Mustache.render(@tag.group_open, :id => (spaces_to_underscores element.name))
+					html += Mustache.render(@tag.group_open, :id => (spaces_to_underscores element.name))
 				elsif element.type == :close
-					puts Mustache.render(@tag.group_close)
+					html += Mustache.render(@tag.group_close)
 				end
 			end
 		end
 
-		puts Mustache.render(@tag.survey_close)
+		html += Mustache.render(@tag.survey_close)
+
+		return html
 	end
 
 	def table_html(table)	
-		# calculate the maximum number of answers in question
-		# draw outline of table 
-		# while children have child
-			# if child is question
-				# render HTML appropriate for question
-			# if child is hr
-				# render HTML appropriate for hr
-		# endwhile
+		# draw outline of table
+		example_answers = table.questions[0].answers
+		answers = []
+		example_answers.each do |example_answer|
+			answer = Hash.new
+			answer[:answer] = example_answer
+			answers.push(answer)
+		end
+
+		html = Mustache.render(@tag.table_open, :answers => answers)
+
+		table.questions.each do |question|
+			if question.name
+				name = question.name
+			else
+				name = 'question_' + @question_number.to_s
+				@question_number = @question_number + 1
+			end
+
+			responses = []
+			question.answers.each do |answer|
+				widget_tag = ''
+				case question.type
+				when :checkbox
+					widget_tag = Mustache.render(@tag.checkbox, { :name => name, :value => spaces_to_underscores(answer) })
+				when :radio
+					widget_tag = Mustache.render(@tag.radio, { :name => name, :value => spaces_to_underscores(answer) })
+				end
+				response = Hash.new
+				response[:response] = widget_tag
+				responses.push response
+			end
+			html += Mustache.render(@tag.table_row, {:query => question.query, :responses => responses } )
+		end
+
+		html += Mustache.render(@tag.table_close)
+
+		return html
 	end
 
 	def question_html(question)
@@ -66,19 +101,23 @@ class Renderer
 		heading_tag = Mustache.render(@tag.heading, :heading => question.heading) if question.heading
 		query_tag = Mustache.render(@tag.query, :query => question.query) if question.query
 		instruction_tag = Mustache.render(@tag.instruction, :instruction => question.instruction) if question.instruction
-
+		
 		case question.type
 		when :checkbox
 			widget_tag = ''
 			question.answers.each do |answer|
-				widget_tag += Mustache.render(@tag.checkbox, { :name => name, :value => spaces_to_underscores(answer) })
+				id = name + '_' + spaces_to_underscores(answer)
+				widget_tag += Mustache.render(@tag.checkbox, { :id => id, :name => name, :value => spaces_to_underscores(answer) })
+				widget_tag += Mustache.render(@tag.label, { :id => id, :response => answer })
 			end
 		when :file
 			widget_tag = Mustache.render(@tag.file, :name => name)
 		when :radio
 			widget_tag = ''
 			question.answers.each do |answer|
-				widget_tag += Mustache.render(@tag.radio, { :name => name, :value => spaces_to_underscores(answer) })
+				id = name + '_' + spaces_to_underscores(answer)
+				widget_tag += Mustache.render(@tag.radio, { :id => id, :name => name, :value => spaces_to_underscores(answer) })
+				widget_tag += Mustache.render(@tag.label, { :id => id, :response => answer })
 			end
 		when :select
 			responses = []
@@ -96,8 +135,9 @@ class Renderer
 		when :toggle
 		end
 
-		puts Mustache.render(@tag.question, { :heading_tag => heading_tag, :query_tag => query_tag, :instruction_tag => instruction_tag, :widget_tag => widget_tag })
+		html = Mustache.render(@tag.question, { :heading_tag => heading_tag, :query_tag => query_tag, :instruction_tag => instruction_tag, :widget_tag => widget_tag })
 
+		return html
 	end
 
 	def spaces_to_underscores(name)

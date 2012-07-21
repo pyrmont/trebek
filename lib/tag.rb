@@ -5,7 +5,10 @@ class Tag
 	end
 
 	def survey_close
-		%{</form>}
+		%{
+				<input class="survey_submit" type="submit" value="Submit &raquo;" />
+			</form>
+		}
 	end
 
 	def group_open
@@ -35,7 +38,7 @@ class Tag
 			<tr>
 				<td class="survey_query">{{query}}</td>
 				{{#responses}}
-				<td class="survey_answer">{{response}}</td>
+				<td class="survey_answer">{{{response}}}</td>
 				{{/responses}}
 			</tr>
 		}
@@ -68,8 +71,12 @@ class Tag
 		%{<p class="survey_instruction">{{instruction}}</p>}
 	end
 
+	def label
+		%{<p class="survey_label"><label for="{{id}}">{{response}}</label></p>}
+	end
+
 	def checkbox
-		%{<input name="{{name}}[]" type="checkbox" value="{{value}}" />}
+		%{<input id="{{id}}" name="{{name}}[]" type="checkbox" value="{{value}}" />}
 	end
 
 	def file

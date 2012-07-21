@@ -17,4 +17,6 @@ surveys = parser.parse
 
 renderer = Renderer.new
 renderer.setup surveys
-renderer.render
+html = renderer.render
+
+puts html
