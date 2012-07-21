@@ -1,3 +1,5 @@
+require_relative 'Token'
+
 class Parser
 	
 	def initialize
