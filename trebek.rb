@@ -9,7 +9,7 @@ get '/' do
 end
 
 get '/examples/:file' do
-	file = File.open('surveys/' + params[:file] + '.txt', 'rb')
+	file = File.open('examples/' + params[:file] + '.txt', 'rb')
 	data = file.read
 	file.close
 
