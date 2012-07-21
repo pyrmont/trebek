@@ -9,21 +9,11 @@ class Token
 		result = nil
 		case @type
 		when :survey, :group, :table
-			case @type
-			when :survey
-				matches = line.scan(/^Survey( \w*|)/i)
-			when :group
-				matches = line.scan(/^Group( \w*|)/i)
-			when :table
-				matches = line.scan(/^Table( \w*|)/i)
-			end
-
-			if name = matches[0][0]
+			if name = line
 				result = (name != '') ? name.strip : nil
 			end
 		when :question_type
-			matches = line.scan(/^Type: (.*)/i)
-			case matches[0][0]
+			case line
 			when 'Checkbox'
 				result = :checkbox
 			when 'File'
@@ -47,7 +37,7 @@ class Token
 			result = nil
 		end
 
-		puts result.inspect
+		# puts result.inspect
 		return result
 	end
 

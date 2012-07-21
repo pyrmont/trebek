@@ -91,39 +91,53 @@ class Parser
 
 	def tokenize(chunk)
 		chunk.strip!
-		if chunk.match(/^Survey/i)
+		res = []
+		if (res = chunk.scan(/^Survey( \w+|)/i)) && res.length > 0
 			type = :survey
-		elsif chunk.match(/^End Survey/i)
+			line = res[0][0]
+		elsif (res = chunk.scan(/^End Survey/i)) && res.length > 0
 			type = :end_survey
-		elsif chunk.match(/^Group/i)
+			line = res[0][0]
+		elsif (res = chunk.scan(/^Group( \w+|)/i)) && res.length > 0
 			type = :group
-		elsif chunk.match(/^End Group/i)
+			line = res[0][0]
+		elsif (res = chunk.scan(/^End Group/i)) && res.length > 0
 			type = :end_group
-		elsif chunk.match(/^Table/i)
+			line = res[0][0]
+		elsif (res = chunk.scan(/^Table( \w+|)/i)) && res.length > 0
 			type = :table
-		elsif chunk.match(/^End Table/i)
+			line = res[0][0]
+		elsif (res = chunk.scan(/^End Table/i)) && res.length > 0
 			type = :end_table
-		elsif chunk.match(/^Type/i)
+			line = res[0][0]
+		elsif (res = chunk.scan(/^Type:( .+|)/i)) && res.length > 0
 			type = :question_type
-		elsif chunk.match(/^Heading/i)
+			line = res[0][0]
+		elsif (res = chunk.scan(/^heading:( .+|)/i)) && res.length > 0
 			type = :question_heading
-		elsif chunk.match(/^Required/i)
+			line = res[0][0]
+		elsif (res = chunk.scan(/^Required:( .+|)/i)) && res.length > 0
 			type = :question_required
-		elsif chunk.match(/^Question/i)
+			line = res[0][0]
+		elsif (res = chunk.scan(/^Question:( .+|)/i)) && res.length > 0
 			type = :question_query
-		elsif chunk.match(/^Instruction/i)
+			line = res[0][0]
+		elsif (res = chunk.scan(/^Instruction:( .+|)/i)) && res.length > 0
 			type = :question_instruction
-		elsif chunk.match(/^Answer/i)
+			line = res[0][0]
+		elsif (res = chunk.scan(/^Answer:( .+|)/i)) && res.length > 0
 			type = :question_answer
-		elsif chunk.match(/^Default/i)
+			line = res[0][0]
+		elsif (res = chunk.scan(/^Default:( .+|)/i)) && res.length > 0
 			type = :question_default
+			line = res[0][0]
 		# elsif chunk.match new line
 
 		else
 			# raise error
 		end
 
-		token = Token.new type, chunk
+		token = Token.new type, line
 
 	end
 end
