@@ -1,5 +1,7 @@
 class Token
 
+	attr_accessor :type, :number, :content
+
 	def initialize(type, line)
 		@type = type
 		@content = generate line
@@ -38,9 +40,10 @@ class Token
 			result = Integer(line)
 		when :end_survey, :end_group, :end_table
 			result = nil
+		when :empty
+			result = nil
 		end
 
-		puts result.inspect
 		return result
 	end
 

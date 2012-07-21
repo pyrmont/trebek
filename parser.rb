@@ -1,6 +1,8 @@
 require_relative 'Token'
 
 class Parser
+
+	attr_reader :in_survey, :in_group, :in_table, :in_question
 	
 	def initialize
 
@@ -12,32 +14,43 @@ class Parser
 	end
 
 	def parse
-		# while lines have a line
+		# Tokenise the string
+		tokens = []
 		@data.each_line do |line|
-			puts 'The line is ' + line
-
 			token = tokenize line
+			tokens.push token
+		end
 
+		tokens.each do |token|
+			case token.type
 			# if line is a survey
-			if line.match(/^Survey/)
+			when :survey
 				# create survey
-				# puts 'Creating survey object...'
+				puts 'Creating survey object...'
 				# add to array of surveys
+				puts 'Adding to array of surveys...'
 				# if survey param unset
+				if @in_survey == false
 					# set to survey param
-				# else
+					@in_survey = true
+				else
 					# raise error ('You have forgotten to close the previous survey.')
-			# else if line is end of survey
+					puts 'You have forgotten to close the previous survey.'
+				end
+			when :end_survey
+				puts 'End of survey reached.'
 				# if survey param set
 					# unset survey param
 				# else
 					# raise error ('You have forgotten to create a survey.')
-			# else if line is a group
+			when :group
+				puts 'Creating group...'
 				# if group param set
 					# set group parent to be group param
 				# set to group param
 				# add to survey's children
-			# else if line is end of group
+			when :end_group
+				puts 'End of group reached.'
 				# if group param set
 					# if group parent set
 						# set group param to be group parent
@@ -46,9 +59,9 @@ class Parser
 					# add to survey's children
 				# else
 					# raise error ('You have forgotten to create a group or you have closed too many groups.')
-			end
-			# else if line is a table
+			when :table
 				# create table
+				puts 'Creating table...'
 				# if survey param set
 					# add to survey's children
 				# else
@@ -57,12 +70,14 @@ class Parser
 					# set to table param
 				# else
 					# raise error ('You have forgotten to close the previous table.')
-			# else if line is end of table
+			when :end_table
+				puts 'End of table reached.'
 				# if table param set
 					# unset table param
 				# else
 					# raise error ('You haven't created a table yet but you're trying to close one.')
-			# else if line is part of a question
+			when :question_required, :question_type, :question_heading, :question_query, :question_instruction, :question_default, :question_answer, :question_selected
+				puts 'Creating elements of question...'
 				# if question param unset
 					# create question
 					# if table param set
@@ -81,11 +96,13 @@ class Parser
 					# add to survey's children
 				# else
 					# raise error ('You have forgotten to create a survey.')
-			# else if line is blank
+			when :blank
+				puts 'This is a new line.'
 				# if question param set
 					# unset question param
 				# if question's question or heading is unset
 					# raise error ('You have forgotten to write a question or a heading to identify this question.')
+			end
 		end
 	end
 
@@ -134,8 +151,9 @@ class Parser
 		elsif (result = chunk.scan(/^Selected: (\d+)/i)) && result.length > 0
 			type = :question_selected
 			line = result[0][0]
-		# elsif chunk.match new line
-
+		elsif chunk == ''
+			type = :blank
+			line = nil
 		else
 			# raise error
 		end
