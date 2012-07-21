@@ -33,7 +33,7 @@ class Tag
 	def table_row
 		%{
 			<tr>
-				<td class="survey_question">{{question}}</td>
+				<td class="survey_query">{{query}}</td>
 				{{#responses}}
 				<td class="survey_answer">{{response}}</td>
 				{{/responses}}
@@ -47,7 +47,7 @@ class Tag
 
 	def question
 		%{
-			<div id="{{id}}" class="{{classes}}">
+			<div id="{{id}}" class="survey_question">
 				{{{heading_tag}}}
 				{{{query_tag}}}
 				{{{instruction_tag}}}

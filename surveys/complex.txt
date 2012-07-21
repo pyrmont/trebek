@@ -116,8 +116,8 @@ Survey Complex 2
 	Answer 2: Blue
 	Selected: 1
 
-	Type: File
-	Heading: Photo
-	Instruction: Please upload a photo.
+	Type: Text Area
+	Heading: Comments
+	Default: You can add additional comments here.
 
 End Survey

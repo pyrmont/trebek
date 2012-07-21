@@ -90,6 +90,7 @@ class Renderer
 			end
 			widget_tag = Mustache.render(@tag.select, { :name => name, :responses => responses })
 		when :text_area
+			widget_tag = Mustache.render(@tag.text_area, { :name => name, :default => question.default })
 		when :text
 			widget_tag = Mustache.render(@tag.text, { :name => name, :default => question.default})
 		when :toggle
