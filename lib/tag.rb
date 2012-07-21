@@ -42,61 +42,47 @@ class Tag
 	end
 
 	def table_close
-		%{
-			</table>
-		}
+		%{</table>}
 	end
 
 	def question
 		%{
 			<div id="{{id}}" class="{{classes}}">
-				{{heading_tag}}
-				{{query_tag}}
-				{{instruction_tag}}
-				{{widget_tag}}
+				{{{heading_tag}}}
+				{{{query_tag}}}
+				{{{instruction_tag}}}
+				{{{widget_tag}}}
 			</div>
 		}
 	end
 
 	def heading
-		%{
-			<h3>{{heading}}</h3>
-		}
+		%{<h3>{{heading}}</h3>}
 	end
 
 	def query
-		%{
-			<p class="survey_question">{{query}}</p>
-		}
+		%{<p class="survey_question">{{query}}</p>}
 	end
 
 	def instruction
-		%{
-			<p class="survey_instruction">{{instruction}}</p>
-		}
+		%{<p class="survey_instruction">{{instruction}}</p>}
 	end
 
 	def checkbox
-		%{
-			<input id="{{id}}" name="{{name}}" type="checkbox" value="{{value}}" />
-		}
+		%{<input name="{{name}}" type="checkbox" value="{{value}}" />}
 	end
 
 	def file
-		%{
-			<input id="{{id}}" name="{{name}}" type="file" value="" />
-		}
+		%{<input name="{{name}}" type="file" />}
 	end
 
 	def radio
-		%{
-			<input id="{{id}}" name="{{name}}" type="radio" value="{{value}}" />
-		}
+		%{<input name="{{name}}" type="radio" value="{{value}}" />}
 	end
 
 	def select
 		%{
-			<select id="{{id}}" name="{{name}}">
+			<select name="{{name}}">
 				{{#responses}}
 					<option value="{{value}}" {{selected}}>{{label}}</option>
 				{{/responses}}
@@ -105,14 +91,10 @@ class Tag
 	end
 
 	def text_area
-		%{
-			<textarea id="{{id}}" name="{{name}}">{{default}}</textarea>
-		}
+		%{<textarea name="{{name}}">{{default}}</textarea>}
 	end
 
 	def text
-		%{
-			<input id="{{id}}" name="{{name}}" type="text" value="{{default}}" />
-		}
+		%{<input name="{{name}}" type="text" value="{{default}}" />}
 	end
 end

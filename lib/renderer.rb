@@ -27,7 +27,7 @@ class Renderer
 				# table_html element
 			# if child is question
 			elsif element.class == Question
-				# question_html element
+				question_html element
 			# if child is hr
 				# render hr HTML
 			# if child is group
@@ -55,24 +55,27 @@ class Renderer
 	end
 
 	def question_html(question)
-		if question.heading
-		end
-
-		if question.query
-		end
-
-		if question.instruction
-		end
+		heading_tag = Mustache.render(@tag.heading, :heading => question.heading) if question.heading
+		query_tag = Mustache.render(@tag.query, :query => question.query) if question.query
+		instruction_tag = Mustache.render(@tag.instruction, :instruction => question.instruction) if question.instruction
 
 		case question.type
 		when :checkbox
 		when :file
+			widget_tag = Mustache.render(@tag.file)
 		when :radio
+			widget_tag = ''
+			question.answers.each do |answer|
+				widget_tag += Mustache.render(@tag.radio, :value => answer)
+			end
 		when :select
 		when :text_area
 		when :text
+			widget_tag = Mustache.render(@tag.text, :default => question.default)
 		when :toggle
 		end
+
+		puts Mustache.render(@tag.question, { :heading_tag => heading_tag, :query_tag => query_tag, :instruction_tag => instruction_tag, :widget_tag => widget_tag })
 
 	end
 
