@@ -25,44 +25,46 @@ class Parser
 			tokens.push token
 		end
 
+		# Create the surveys
+		surveys = []
+		groups = []
 		tokens.each do |token|
 			case token.type
-			# if line is a survey
 			when :survey
-				# create survey
-				puts 'Creating survey object...'
-				# add to array of surveys
-				puts 'Adding to array of surveys...'
-				# if survey param unset
-				if @current_survey == false
-					# set to survey param
-					@current_survey = true
+				survey = Survey.new
+				survey.name = token.content if token.content
+				puts survey.inspect
+				surveys.push survey
+				if @current_survey == nil
+					@current_survey = survey
 				else
 					# raise error ('You have forgotten to close the previous survey.')
 					puts 'You have forgotten to close the previous survey.'
 				end
 			when :end_survey
-				puts 'End of survey reached.'
-				# if survey param set
-					# unset survey param
-				# else
+				if @current_survey
+					@current_survey = nil
+				else
 					# raise error ('You have forgotten to create a survey.')
+					puts 'You have forgotten to create a survey.'
+				end
 			when :group
-				puts 'Creating group...'
-				# if group param set
-					# set group parent to be group param
-				# set to group param
-				# add to survey's children
+				group = Group.new :open
+				group.name = token.content if token.content
+				group.parent @current_group.position if @current_group
+				group.position = groups.length
+				groups.push group
+				@current_group = group
+				@current_survey.elements.push group
 			when :end_group
-				puts 'End of group reached.'
-				# if group param set
-					# if group parent set
-						# set group param to be group parent
-					# else
-						# unset group param
-					# add to survey's children
-				# else
+				group = Group.new :close
+				if @current_group
+					@current_group = (@current_group.parent) ? groups[@current_group.parent] : nil
+					@current_survey.elements.push group
+				else
 					# raise error ('You have forgotten to create a group or you have closed too many groups.')
+					puts 'You have forgotten to create a group or you have closed too many groups.'
+				end
 			when :table
 				# create table
 				puts 'Creating table...'
