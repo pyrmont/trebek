@@ -102,7 +102,6 @@ class Renderer
 
 	def spaces_to_underscores(name)
 		return '' if name == nil 
-
 		return name.gsub(/\s/, '_').downcase
 	end
 
