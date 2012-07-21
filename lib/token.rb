@@ -31,7 +31,7 @@ class Token
 			when 'Toggle'
 				result = :toggle
 			end
-		when :question_heading, :question_query, :question_instruction, :question_default
+		when :question_name, :question_heading, :question_query, :question_instruction, :question_default
 			result = line
 		when :question_required
 			if line.casecmp('Yes') == 0

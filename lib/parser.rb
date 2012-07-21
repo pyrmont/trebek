@@ -84,7 +84,7 @@ class Parser
 					# raise error ('You are trying to close a table but none are open.')
 					puts 'You are trying to close a table but none are open.'
 				end
-			when :question_required, :question_type, :question_heading, :question_query, :question_instruction, :question_default, :question_answer, :question_selected
+			when :question_name, :question_required, :question_type, :question_heading, :question_query, :question_instruction, :question_default, :question_answer, :question_selected
 				if current_question == nil
 					question = Question.new
 					current_question = question
@@ -98,6 +98,8 @@ class Parser
 				end
 				
 				case token.type
+				when :question_name
+					question.name = token.content
 				when :question_required
 					question.required = token.content
 				when :question_type
@@ -157,6 +159,9 @@ class Parser
 			line = result[0][0]
 		elsif (result = chunk.scan(/^Required: (Yes|No)/i)) && result.length > 0
 			type = :question_required
+			line = result[0][0]
+		elsif (result = chunk.scan(/^Name: (.+)/i)) && result.length > 0
+			type = :question_name
 			line = result[0][0]
 		elsif (result = chunk.scan(/^Type: (Checkbox|File|Radio|Select|Text Area|Text|Toggle)/i)) && result.length > 0
 			type = :question_type

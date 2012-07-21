@@ -2,6 +2,7 @@ Survey Simple
 
 	Group Person
 		
+		Name: name
 		Type: Text
 		Heading: Name
 		Question: What is your name?
@@ -9,6 +10,7 @@ Survey Simple
 
 	End Group
 
+	Name: colour
 	Type: Radio
 	Heading: Questions, Questions
 	Question: What is your favourite colour?
@@ -16,6 +18,7 @@ Survey Simple
 	Answer 2: Blue
 	Selected: 1
 
+	Name: photo
 	Type: File
 	Heading: Photo
 	Instruction: Please upload a photo.

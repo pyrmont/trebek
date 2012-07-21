@@ -5,6 +5,7 @@ class Renderer
 
 	def initialize
 		@tag = Tag.new
+		@question_number = 0
 	end
 
 	# Set up the renderer with the surveys that will be rendered.
@@ -55,6 +56,13 @@ class Renderer
 	end
 
 	def question_html(question)
+		if question.name
+			name = question.name
+		else
+			name = 'question_' + @question_number
+			@question_number = @question_number + 1
+		end
+
 		heading_tag = Mustache.render(@tag.heading, :heading => question.heading) if question.heading
 		query_tag = Mustache.render(@tag.query, :query => question.query) if question.query
 		instruction_tag = Mustache.render(@tag.instruction, :instruction => question.instruction) if question.instruction
@@ -62,16 +70,16 @@ class Renderer
 		case question.type
 		when :checkbox
 		when :file
-			widget_tag = Mustache.render(@tag.file)
+			widget_tag = Mustache.render(@tag.file, :name => name)
 		when :radio
 			widget_tag = ''
 			question.answers.each do |answer|
-				widget_tag += Mustache.render(@tag.radio, :value => answer)
+				widget_tag += Mustache.render(@tag.radio, { :name => name, :value => answer })
 			end
 		when :select
 		when :text_area
 		when :text
-			widget_tag = Mustache.render(@tag.text, :default => question.default)
+			widget_tag = Mustache.render(@tag.text, { :name => name, :default => question.default})
 		when :toggle
 		end
 

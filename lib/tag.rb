@@ -69,7 +69,7 @@ class Tag
 	end
 
 	def checkbox
-		%{<input name="{{name}}" type="checkbox" value="{{value}}" />}
+		%{<input name="{{name}}[]" type="checkbox" value="{{value}}" />}
 	end
 
 	def file
@@ -77,12 +77,12 @@ class Tag
 	end
 
 	def radio
-		%{<input name="{{name}}" type="radio" value="{{value}}" />}
+		%{<input name="{{name}}" type="radio" value="{{value}}" {{checked}}/>}
 	end
 
 	def select
 		%{
-			<select name="{{name}}">
+			<select name="{{name}}[]">
 				{{#responses}}
 					<option value="{{value}}" {{selected}}>{{label}}</option>
 				{{/responses}}
