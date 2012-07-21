@@ -7,7 +7,7 @@ Survey Simple
 		Question: What is your name?
 		Default: Enter your name here.
 
-	End Group Person
+	End Group
 
 	Type: Radio
 	Heading: Questions, Questions
@@ -20,4 +20,4 @@ Survey Simple
 	Heading: Photo
 	Instruction: Please upload a photo.
 
-End Survey Simple
+End Survey

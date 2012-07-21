@@ -53,7 +53,7 @@ class Parser
 			when :group
 				group = Group.new :open
 				group.name = token.content if token.content
-				group.parent current_group.position if current_group
+				group.parent = current_group.position if current_group
 				group.position = groups.length
 				groups.push group
 				current_group = group
@@ -70,7 +70,7 @@ class Parser
 			when :table
 				table = Table.new
 				table.name = token.content if token.content
-				current_survey.push table
+				current_survey.elements.push table
 				if current_table == nil
 					current_table = table
 				else
@@ -137,19 +137,19 @@ class Parser
 	def tokenize(chunk)
 		chunk.strip!
 		result = []
-		if (result = chunk.scan(/^Survey( \w+|)/i)) && result.length > 0
+		if (result = chunk.scan(/^Survey( .+|)/i)) && result.length > 0
 			type = :survey
 			line = result[0][0]
 		elsif (result = chunk.scan(/^End Survey/i)) && result.length > 0
 			type = :end_survey
 			line = result[0][0]
-		elsif (result = chunk.scan(/^Group( \w+|)/i)) && result.length > 0
+		elsif (result = chunk.scan(/^Group( .+|)/i)) && result.length > 0
 			type = :group
 			line = result[0][0]
 		elsif (result = chunk.scan(/^End Group/i)) && result.length > 0
 			type = :end_group
 			line = result[0][0]
-		elsif (result = chunk.scan(/^Table( \w+|)/i)) && result.length > 0
+		elsif (result = chunk.scan(/^Table( .+|)/i)) && result.length > 0
 			type = :table
 			line = result[0][0]
 		elsif (result = chunk.scan(/^End Table/i)) && result.length > 0

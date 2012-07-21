@@ -1,0 +1,120 @@
+Survey Complex 1
+
+	Group Person
+		
+		Type: Text
+		Heading: Name
+		Question: What is your name?
+		Default: Enter your name here.
+
+		Type: File
+		Heading: Photo
+		Instruction: Please upload a photo.
+
+	End Group
+
+	Type: Radio
+	Heading: Questions, Questions
+	Question: What is your favourite colour?
+	Answer 1: Red
+	Answer 2: Blue
+	Selected: 1
+
+	Table Events
+
+		Type: Radio
+		Heading: Overall
+		Question: How would you rate the event?
+		Answer 1: Awesome
+		Answer 2: Good
+		Answer 3: Meh
+		Answer 4: Sucked
+
+		Type: Radio
+		Heading: Service
+		Question: What did you think of the service?
+		Answer 1: Awesome
+		Answer 2: Good
+		Answer 3: Meh
+		Answer 4: Sucked
+
+		Type: Radio
+		Heading: Prices
+		Question: What did you think of the prices?
+		Answer 1: Awesome
+		Answer 2: Good
+		Answer 3: Meh
+		Answer 4: Sucked
+
+	End Table
+
+	Group Multiples
+
+		Group
+
+			Table
+
+				Type: Radio
+				Heading: Overall
+				Question: How would you rate the event?
+				Answer 1: Awesome
+				Answer 2: Good
+				Answer 3: Meh
+				Answer 4: Sucked
+
+				Type: Radio
+				Heading: Service
+				Question: What did you think of the service?
+				Answer 1: Awesome
+				Answer 2: Good
+				Answer 3: Meh
+				Answer 4: Sucked
+
+				Type: Radio
+				Heading: Prices
+				Question: What did you think of the prices?
+				Answer 1: Awesome
+				Answer 2: Good
+				Answer 3: Meh
+				Answer 4: Sucked
+
+			End Table
+
+		End Group
+
+		Type: Text
+		Heading: Showing Off
+		Question: Aren't you just showing off?
+
+	End Group
+
+	Type: Text
+	Heading: Email
+	Question: What is your email?
+	Default: Enter your email here.
+
+End Survey
+
+Survey Complex 2
+
+	Group Person
+		
+		Type: Text
+		Heading: Name
+		Question: What is your name?
+		Default: Enter your name here.
+
+	End Group
+
+	Type: Radio
+	Heading: Questions, Questions
+	Question: What is your favourite colour?
+	Answer 1: Red
+	Answer 2: Blue
+	Selected: 1
+
+	Type: File
+	Heading: Photo
+	Instruction: Please upload a photo.
+
+End Survey
