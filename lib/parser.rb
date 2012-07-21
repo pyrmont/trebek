@@ -1,4 +1,8 @@
 require_relative 'Token'
+require_relative 'Survey'
+require_relative 'Group'
+require_relative 'Table'
+require_relative 'Question'
 
 class Parser
 
