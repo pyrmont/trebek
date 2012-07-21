@@ -1,22 +1,16 @@
 require_relative 'lib/Parser'
 require_relative 'lib/Renderer'
 
-data = ''
-
-File.open('surveys/complex.txt', 'r') do |survey|
-	while line = survey.gets
-        data += line
-	end
-end
+file = File.open("surveys/complex.txt", "rb")
+data = file.read
+file.close
 
 parser = Parser.new
 parser.setup data
 surveys = parser.parse
 
-# puts surveys.inspect
-
 renderer = Renderer.new
 renderer.setup surveys
-html = renderer.render
+form = renderer.render
 
-# puts html
+puts form
