@@ -13,7 +13,7 @@ get '/examples/:file' do
 	data = file.read
 	file.close
 
-	build data
+	@form = build data
 
 	erb :frame
 end
@@ -25,5 +25,5 @@ def build(data)
 
 	renderer = Renderer.new
 	renderer.setup surveys
-	form = renderer.render
+	renderer.render
 end
