@@ -34,7 +34,7 @@ class Token
 		when :question_required, :question_heading, :question_query, :question_instruction, :question_default
 			result = line
 		when :question_answer
-			@number = line[0]
+			@number = Integer(line[0])
 			result = line[1]
 		when :question_selected
 			result = Integer(line)
