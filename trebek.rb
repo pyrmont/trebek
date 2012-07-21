@@ -14,6 +14,8 @@ get '/examples/:file' do
 	file.close
 
 	build data
+
+	erb :frame
 end
 
 def build(data)
