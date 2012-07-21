@@ -22,22 +22,25 @@ class Token
 				result = :radio
 			when 'Select'
 				result = :select
-			when 'Text'
-				result = :text
 			when 'Text Area'
 				result = :text_area
+			when 'Text'
+				result = :text
+			when 'Toggle'
+				result = :toggle
 			end
-		when :question_heading
-		when :question_required
-		when :question_query
-		when :question_instruction
+		when :question_required, :question_heading, :question_query, :question_instruction, :question_default
+			result = line
 		when :question_answer
-		when :question_default
+			@number = line[0]
+			result = line[1]
+		when :question_selected
+			result = Integer(line)
 		when :end_survey, :end_group, :end_table
 			result = nil
 		end
 
-		# puts result.inspect
+		puts result.inspect
 		return result
 	end
 

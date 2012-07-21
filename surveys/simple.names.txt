@@ -14,7 +14,7 @@ Survey Simple
 	Question: What is your favourite colour?
 	Answer 1: Red
 	Answer 2: Blue
-	Default: 1
+	Selected: 1
 
 	Type: File
 	Heading: Photo
