@@ -13,6 +13,8 @@ parser = Parser.new
 parser.setup data
 surveys = parser.parse
 
+puts surveys.inspect
+
 renderer = Renderer.new
 renderer.setup surveys
 renderer.render
