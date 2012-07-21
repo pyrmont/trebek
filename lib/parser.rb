@@ -5,8 +5,6 @@ require_relative 'Table'
 require_relative 'Question'
 
 class Parser
-
-	attr_reader :current_survey, :current_group, :current_table, :current_question
 	
 	def initialize
 
@@ -25,25 +23,29 @@ class Parser
 			tokens.push token
 		end
 
-		# Create the surveys
 		surveys = []
 		groups = []
+		current_survey = nil
+		current_group = nil
+		current_table = nil
+		current_question = nil
+
+		# Create the surveys
 		tokens.each do |token|
 			case token.type
 			when :survey
 				survey = Survey.new
 				survey.name = token.content if token.content
-				puts survey.inspect
 				surveys.push survey
-				if @current_survey == nil
-					@current_survey = survey
+				if current_survey == nil
+					current_survey = survey
 				else
 					# raise error ('You have forgotten to close the previous survey.')
 					puts 'You have forgotten to close the previous survey.'
 				end
 			when :end_survey
-				if @current_survey
-					@current_survey = nil
+				if current_survey
+					current_survey = nil
 				else
 					# raise error ('You have forgotten to create a survey.')
 					puts 'You have forgotten to create a survey.'
@@ -51,37 +53,37 @@ class Parser
 			when :group
 				group = Group.new :open
 				group.name = token.content if token.content
-				group.parent @current_group.position if @current_group
+				group.parent current_group.position if current_group
 				group.position = groups.length
 				groups.push group
-				@current_group = group
-				@current_survey.elements.push group
+				current_group = group
+				current_survey.elements.push group
 			when :end_group
 				group = Group.new :close
-				if @current_group
-					@current_group = (@current_group.parent) ? groups[@current_group.parent] : nil
-					@current_survey.elements.push group
+				if current_group
+					current_group = (current_group.parent) ? groups[current_group.parent] : nil
+					current_survey.elements.push group
 				else
 					# raise error ('You have forgotten to create a group or you have closed too many groups.')
 					puts 'You have forgotten to create a group or you have closed too many groups.'
 				end
 			when :table
-				# create table
-				puts 'Creating table...'
-				# if survey param set
-					# add to survey's children
-				# else
-					# raise error ('You haven't created a survey but you're trying to close one.')
-				# if table param unset
-					# set to table param
-				# else
+				table = Table.new
+				table.name = token.content if token.content
+				current_survey.push table
+				if current_table == nil
+					current_table = table
+				else
 					# raise error ('You have forgotten to close the previous table.')
+					puts 'You have forgotten to close the previous table.'
+				end
 			when :end_table
-				puts 'End of table reached.'
-				# if table param set
-					# unset table param
-				# else
-					# raise error ('You haven't created a table yet but you're trying to close one.')
+				if current_table
+					current_table = nil
+				else
+					# raise error ('You are trying to close a table but none are open.')
+					puts 'You are trying to close a table but none are open.'
+				end
 			when :question_required, :question_type, :question_heading, :question_query, :question_instruction, :question_default, :question_answer, :question_selected
 				puts 'Creating elements of question...'
 				# if question param unset

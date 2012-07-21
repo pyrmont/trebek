@@ -1,3 +1,5 @@
+# The group object functions more as a quasi-object that closely approximates a div tag (ie. it has separate opening and closing types).
+
 class Group
 
 	attr_accessor :type, :name, :parent, :position
