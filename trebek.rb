@@ -19,4 +19,4 @@ renderer = Renderer.new
 renderer.setup surveys
 html = renderer.render
 
-puts html
+# puts html

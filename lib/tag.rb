@@ -1,107 +1,79 @@
 class Tag
-	
-	def survey_open
-		%{<form id="{{id}}" class="survey_form" enctype="multipart/form-data" action="/sent" method="post">}
+
+	attr_accessor :survey_open, :survey_close, :group_open, :group_close, :table_open, :table_row, :table_close, :question, :heading, :query, :instruction, :label, :checkbox, :file, :radio, :select, :text_area, :text
+
+	def initialize
+		file = File.open("templates/_survey_open.mustache", "rb")
+		@survey_open = file.read
+		file.close
+
+		file = File.open("templates/_survey_close.mustache", "rb")
+		@survey_close = file.read
+		file.close
+
+		file = File.open("templates/_group_open.mustache", "rb")
+		@group_open = file.read
+		file.close
+
+		file = File.open("templates/_group_close.mustache", "rb")
+		@group_close = file.read
+		file.close
+
+		file = File.open("templates/_table_open.mustache", "rb")
+		@table_open = file.read
+		file.close
+
+		file = File.open("templates/_table_row.mustache", "rb")
+		@table_row = file.read
+		file.close
+
+		file = File.open("templates/_table_close.mustache", "rb")
+		@table_close = file.read
+		file.close
+
+		file = File.open("templates/_question.mustache", "rb")
+		@question = file.read
+		file.close
+
+		file = File.open("templates/_heading.mustache", "rb")
+		@heading = file.read
+		file.close
+
+		file = File.open("templates/_query.mustache", "rb")
+		@query = file.read
+		file.close
+
+		file = File.open("templates/_instruction.mustache", "rb")
+		@instruction = file.read
+		file.close
+
+		file = File.open("templates/_label.mustache", "rb")
+		@label = file.read
+		file.close
+
+		file = File.open("templates/_checkbox.mustache", "rb")
+		@checkbox = file.read
+		file.close
+
+		file = File.open("templates/_file.mustache", "rb")
+		@file = file.read
+		file.close
+
+		file = File.open("templates/_radio.mustache", "rb")
+		@radio = file.read
+		file.close
+
+		file = File.open("templates/_select.mustache", "rb")
+		@select = file.read
+		file.close
+
+		file = File.open("templates/_text_area.mustache", "rb")
+		@text_area = file.read
+		file.close
+
+		file = File.open("templates/_text.mustache", "rb")
+		@text = file.read
+		file.close
 	end
 
-	def survey_close
-		%{
-				<input class="survey_submit" type="submit" value="Submit &raquo;" />
-			</form>
-		}
-	end
-
-	def group_open
-		%{<div id="{{id}}" class="survey_group">}
-	end
-
-	def group_close
-		%{</div>}
-	end
-
-	def table_open
-		%{
-			<table id="{{id}}" class="survey_table">
-				<thead>
-					<tr>
-						<th></th>
-						{{#answers}}
-						<th class="survey_answer">{{answer}}</th>
-						{{/answers}}
-					</tr>
-				</thead>
-		}
-	end
-
-	def table_row
-		%{
-			<tr>
-				<td class="survey_meta">{{{meta}}}</td>
-				{{#responses}}
-				<td class="survey_answer">{{{response}}}</td>
-				{{/responses}}
-			</tr>
-		}
-	end
-
-	def table_close
-		%{</table>}
-	end
-
-	def question
-		%{
-			<div id="{{id}}" class="survey_question">
-				{{{heading_tag}}}
-				{{{query_tag}}}
-				{{{instruction_tag}}}
-				{{{widget_tag}}}
-			</div>
-		}
-	end
-
-	def heading
-		%{<h3>{{heading}}</h3>}
-	end
-
-	def query
-		%{<p class="survey_question">{{query}}</p>}
-	end
-
-	def instruction
-		%{<p class="survey_instruction">{{instruction}}</p>}
-	end
-
-	def label
-		%{<p class="survey_label"><label for="{{id}}">{{response}}</label></p>}
-	end
-
-	def checkbox
-		%{<input id="{{id}}" name="{{name}}[]" type="checkbox" value="{{value}}" />}
-	end
-
-	def file
-		%{<input name="{{name}}" type="file" />}
-	end
-
-	def radio
-		%{<input name="{{name}}" type="radio" value="{{value}}" {{checked}}/>}
-	end
-
-	def select
-		%{
-			<select name="{{name}}[]">
-				{{#responses}}
-					<option value="{{value}}" {{selected}}>{{label}}</option>
-				{{/responses}}
-			</select>
-		}
-	end
-
-	def text_area
-		%{<textarea name="{{name}}">{{default}}</textarea>}
-	end
-
-	def text
-		%{<input name="{{name}}" type="text" value="{{default}}" />}
-	end
 end
