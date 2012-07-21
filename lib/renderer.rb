@@ -69,6 +69,11 @@ class Renderer
 				@question_number = @question_number + 1
 			end
 
+			meta = ''
+			meta += Mustache.render(@tag.heading, :heading => question.heading) if question.heading
+			meta += Mustache.render(@tag.query, :query => question.query) if question.query
+			meta += Mustache.render(@tag.instruction, :instruction => question.instruction) if question.instruction
+
 			responses = []
 			question.answers.each do |answer|
 				widget_tag = ''
@@ -82,7 +87,7 @@ class Renderer
 				response[:response] = widget_tag
 				responses.push response
 			end
-			html += Mustache.render(@tag.table_row, {:query => question.query, :responses => responses } )
+			html += Mustache.render(@tag.table_row, {:meta => meta, :responses => responses } )
 		end
 
 		html += Mustache.render(@tag.table_close)

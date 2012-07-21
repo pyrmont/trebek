@@ -36,7 +36,7 @@ class Tag
 	def table_row
 		%{
 			<tr>
-				<td class="survey_query">{{query}}</td>
+				<td class="survey_meta">{{{meta}}}</td>
 				{{#responses}}
 				<td class="survey_answer">{{{response}}}</td>
 				{{/responses}}
