@@ -92,6 +92,8 @@ class Parser
 	def tokenize(chunk)
 		if chunk.match(/^Survey/)
 
+			token = Token.new :survey, chunk
+
 		elsif chunk.match(/^End Survey/)
 
 		elsif chunk.match(/^Group/)
