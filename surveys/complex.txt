@@ -13,9 +13,9 @@ Survey Complex 1
 
 	End Group
 
-	Type: Radio
+	Type: Checkbox
 	Heading: Questions, Questions
-	Question: What is your favourite colour?
+	Question: What colours do you like?
 	Answer 1: Red
 	Answer 2: Blue
 	Selected: 1
@@ -82,9 +82,12 @@ Survey Complex 1
 
 		End Group
 
-		Type: Text
+		Type: Select
 		Heading: Showing Off
 		Question: Aren't you just showing off?
+		Answer 1: Yes
+		Answer 2: No
+		Answer 3: Maybe
 
 	End Group
 

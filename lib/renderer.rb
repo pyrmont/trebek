@@ -22,7 +22,7 @@ class Renderer
 	end
 
 	def survey_html(survey)
-		puts Mustache.render(@tag.survey_open, :id => (convert_for_id survey.name))
+		puts Mustache.render(@tag.survey_open, :id => (spaces_to_underscores survey.name))
 		survey.elements.each do |element|
 			if element.class == Table
 				# table_html element
@@ -34,7 +34,7 @@ class Renderer
 			# if child is group
 			elsif element.class == Group
 				if element.type == :open
-					puts Mustache.render(@tag.group_open, :id => (convert_for_id element.name))
+					puts Mustache.render(@tag.group_open, :id => (spaces_to_underscores element.name))
 				elsif element.type == :close
 					puts Mustache.render(@tag.group_close)
 				end
@@ -59,7 +59,7 @@ class Renderer
 		if question.name
 			name = question.name
 		else
-			name = 'question_' + @question_number
+			name = 'question_' + @question_number.to_s
 			@question_number = @question_number + 1
 		end
 
@@ -69,14 +69,26 @@ class Renderer
 
 		case question.type
 		when :checkbox
+			widget_tag = ''
+			question.answers.each do |answer|
+				widget_tag += Mustache.render(@tag.checkbox, { :name => name, :value => spaces_to_underscores(answer) })
+			end
 		when :file
 			widget_tag = Mustache.render(@tag.file, :name => name)
 		when :radio
 			widget_tag = ''
 			question.answers.each do |answer|
-				widget_tag += Mustache.render(@tag.radio, { :name => name, :value => answer })
+				widget_tag += Mustache.render(@tag.radio, { :name => name, :value => spaces_to_underscores(answer) })
 			end
 		when :select
+			responses = []
+			question.answers.each do |answer|
+				response = Hash.new
+				response[:label] = answer
+				response[:value] = spaces_to_underscores(answer)
+				responses.push(response)
+			end
+			widget_tag = Mustache.render(@tag.select, { :name => name, :responses => responses })
 		when :text_area
 		when :text
 			widget_tag = Mustache.render(@tag.text, { :name => name, :default => question.default})
@@ -87,10 +99,10 @@ class Renderer
 
 	end
 
-	def convert_for_id(name)
+	def spaces_to_underscores(name)
 		return '' if name == nil 
 
-		return name.gsub(/\s/, '_')
+		return name.gsub(/\s/, '_').downcase
 	end
 
 end
