@@ -31,8 +31,14 @@ class Token
 			when 'Toggle'
 				result = :toggle
 			end
-		when :question_required, :question_heading, :question_query, :question_instruction, :question_default
+		when :question_heading, :question_query, :question_instruction, :question_default
 			result = line
+		when :question_required
+			if line.casecmp('Yes') == 0
+				result = true
+			else
+				result = false
+			end
 		when :question_answer
 			@number = Integer(line[0])
 			result = line[1]

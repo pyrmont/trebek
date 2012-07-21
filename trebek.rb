@@ -10,7 +10,9 @@ end
 
 parser = Parser.new
 parser.setup data
-parser.parse
+surveys = parser.parse
+
+puts surveys.inspect
 
 # Reset data
 puts "\n\n"
@@ -24,6 +26,6 @@ end
 
 parser = Parser.new
 parser.setup data
-parser.parse
+surveys = parser.parse
 
-# puts parser.inspect
+puts surveys.inspect

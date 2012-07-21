@@ -85,18 +85,36 @@ class Parser
 					puts 'You are trying to close a table but none are open.'
 				end
 			when :question_required, :question_type, :question_heading, :question_query, :question_instruction, :question_default, :question_answer, :question_selected
-				puts 'Creating elements of question...'
-				# if question param unset
-					# create question
-					# if table param set
-						# add to table's children
-					# else if survey param set
-						# add to survey's children
-					# else
-						# raise error ('You have forgotten to create a survey.')
-				# else if question param set and this part of the question set
-					# raise error ('You are trying to define the same part of the question twice.')
-				# add to question
+				if current_question == nil
+					question = Question.new
+					current_question = question
+					if current_table
+						current_table.questions.push question
+					else
+						current_survey.elements.push question
+					end
+				else
+					question = current_question
+				end
+				
+				case token.type
+				when :question_required
+					question.required = token.content
+				when :question_type
+					question.type = token.content
+				when :question_heading
+					question.heading = token.content
+				when :question_query
+					question.query = token.content
+				when :question_instruction
+					question.instruction = token.content
+				when :question_default
+					question.default = token.content
+				when :question_answer
+					question.answers[(token.number - 1)] = token.content
+				when :question_selected
+					question.selected = token.content
+				end
 			# else if line is hr
 				# if table param is set
 					# add to table's children
@@ -105,13 +123,15 @@ class Parser
 				# else
 					# raise error ('You have forgotten to create a survey.')
 			when :blank
-				puts 'This is a new line.'
-				# if question param set
-					# unset question param
+				if current_question
+					current_question = nil
+				end
 				# if question's question or heading is unset
 					# raise error ('You have forgotten to write a question or a heading to identify this question.')
 			end
 		end
+
+		return surveys
 	end
 
 	def tokenize(chunk)
