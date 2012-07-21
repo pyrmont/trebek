@@ -1,16 +1,27 @@
+require 'data_mapper'
+require 'sinatra'
+
 require_relative 'lib/Parser'
 require_relative 'lib/Renderer'
 
-file = File.open("surveys/complex.txt", "rb")
-data = file.read
-file.close
+get '/' do
+	'Your mother'
+end
 
-parser = Parser.new
-parser.setup data
-surveys = parser.parse
+get '/examples/:file' do
+	file = File.open('surveys/' + params[:file] + '.txt', 'rb')
+	data = file.read
+	file.close
 
-renderer = Renderer.new
-renderer.setup surveys
-form = renderer.render
+	build data
+end
 
-puts form
+def build(data)
+	parser = Parser.new
+	parser.setup data
+	surveys = parser.parse
+
+	renderer = Renderer.new
+	renderer.setup surveys
+	form = renderer.render
+end
