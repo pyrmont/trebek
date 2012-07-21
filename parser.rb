@@ -15,6 +15,9 @@ class Parser
 		# while lines have a line
 		@data.each_line do |line|
 			puts 'The line is ' + line
+
+			token = tokenize line
+
 			# if line is a survey
 			if line.match(/^Survey/)
 				# create survey
@@ -84,5 +87,40 @@ class Parser
 				# if question's question or heading is unset
 					# raise error ('You have forgotten to write a question or a heading to identify this question.')
 		end
+	end
+
+	def tokenize(chunk)
+		if chunk.match(/^Survey/)
+
+		elsif chunk.match(/^End Survey/)
+
+		elsif chunk.match(/^Group/)
+
+		elsif chunk.match(/^End Group/)
+
+		elsif chunk.match(/^Table/)
+
+		elsif chunk.match(/^End Table/)
+
+		elsif chunk.match(/^Type/)
+
+		elsif chunk.match(/^Heading/)
+
+		elsif chunk.match(/^Required/)
+
+		elsif chunk.match(/^Question/)
+
+		elsif chunk.match(/^Instruction/)
+
+		elsif chunk.match(/^Answer/)
+
+		elsif chunk.match(/^Default/)
+
+		# elsif chunk.match new line
+
+		else
+			# raise error
+		end
+
 	end
 end
