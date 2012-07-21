@@ -90,33 +90,32 @@ class Parser
 	end
 
 	def tokenize(chunk)
-		if chunk.match(/^Survey/)
-
+		chunk.strip!
+		if chunk.match(/^Survey/i)
 			token = Token.new :survey, chunk
+		elsif chunk.match(/^End Survey/i)
+			token = Token.new :end_survey, chunk
+		elsif chunk.match(/^Group/i)
+			token = Token.new :group, chunk
+		elsif chunk.match(/^End Group/i)
+			token = Token.new :end_group, chunk
+		elsif chunk.match(/^Table/i)
+			token = Token.new :table, chunk
+		elsif chunk.match(/^End Table/i)
+			token = Token.new :end_table, chunk
+		elsif chunk.match(/^Type/i)
 
-		elsif chunk.match(/^End Survey/)
+		elsif chunk.match(/^Heading/i)
 
-		elsif chunk.match(/^Group/)
+		elsif chunk.match(/^Required/i)
 
-		elsif chunk.match(/^End Group/)
+		elsif chunk.match(/^Question/i)
 
-		elsif chunk.match(/^Table/)
+		elsif chunk.match(/^Instruction/i)
 
-		elsif chunk.match(/^End Table/)
+		elsif chunk.match(/^Answer/i)
 
-		elsif chunk.match(/^Type/)
-
-		elsif chunk.match(/^Heading/)
-
-		elsif chunk.match(/^Required/)
-
-		elsif chunk.match(/^Question/)
-
-		elsif chunk.match(/^Instruction/)
-
-		elsif chunk.match(/^Answer/)
-
-		elsif chunk.match(/^Default/)
+		elsif chunk.match(/^Default/i)
 
 		# elsif chunk.match new line
 

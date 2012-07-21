@@ -8,7 +8,7 @@ class Token
 	def generate(line)
 		result = nil
 		case @type
-		when :survey || :group || :table
+		when :survey, :group, :table
 			case @type
 			when :survey
 				matches = line.scan(/Survey( \w*|)/i)
@@ -25,7 +25,7 @@ class Token
 			puts result.inspect
 		
 			result = nil
-		when :end_survey || :end_group || :end_table
+		when :end_survey, :end_group, :end_table
 			result = nil
 		end
 
