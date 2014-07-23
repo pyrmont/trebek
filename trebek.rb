@@ -1,28 +1,14 @@
 require './parser'
 
-# Check that a parameter was passed.
-if (ARGV.length < 1)
-    abort "Error: Trebek requires the path of the file to be parsed to be passed as an argument."
-end
-
-# Get the filename based on the arguments used.
-filename = ARGV[0]
+# Use the first argument as the path to the file to be parsed (abort if there is a problem).
+abort "Error: Trebek requires the path of the file to be parsed to be passed as an argument." unless filename = ARGV[0]
+abort "Error: Trebek could not find the file at the path you specified." unless File.exists? filename
 
 # Get the contents of the file.
-file = File.open(filename, 'r')
-contents = file.read
-file.close
+contents = IO.read(filename)
 
 # Create the parser.
 parser = Parser.new
-
-# Extract the questions from the contents.
-questions = contents.scan parser.regex[:question]
-
-# Print out the questions.
-questions.each do |question|
-    puts question.inspect
-end
 
 # Parse the contents.
 parsed_contents = parser.parse contents
