@@ -5,6 +5,10 @@ vendor/bundler
 # Generated configs
 config/environment.rb
 
+# Example files used in development
+examples
+development
+
 # The usual suspects
 Thumbs.db
 Desktop.ini
