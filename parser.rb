@@ -33,6 +33,12 @@ class Parser
             instruction_text = $5
             answers = $6
 
+            # Check the name attribute is set and if not use the incremented generic name.
+            name_attribute = (name_attribute) ? name_attribute : 'question_' + question_number.to_s
+
+            # Set the ID attribute to be equal to the name_attribute.
+            id_attribute = name_attribute
+
             # Create an empty hash for the HTML.
             html = {}
 
@@ -40,19 +46,16 @@ class Parser
             requirement_class = (requirement == '*') ? ' required' : ''
 
             # Set the HTML for the question.
-            html[:question] = '<div class="question' + requirement_class + '">' + question_text + '</div>'
+            html[:question] = '<div class="question' + requirement_class + '"><label for="' + id_attribute + '">' + question_text + '</div>'
 
             # Set the HTML for the instruction.
             html[:instruction] = (instruction_text) ? '<div class="instruction">' + instruction_text + '</div>' : ''
 
-            # Check the name attribute is set and if not use the incremented generic name.
-            name_attribute = (name_attribute) ? name_attribute : 'question_' + question_number.to_s
-
             # Parse and replace the group of answers or answers.
             if is_group? answers
-                answers = replace_group answers, name_attribute
+                answers = replace_group answers, name_attribute, id_attribute
             else
-                answers = replace_answers answers, name_attribute
+                answers = replace_answers answers, name_attribute, id_attribute
             end
 
             # Set the HTML for the answers.
@@ -64,18 +67,18 @@ class Parser
         return result
     end
 
-    def replace_group(answers, name_attribute)
+    def replace_group(answers, name_attribute, id_attribute)
         answers.gsub! @regex[:title] do |row|
             # Assign meaningful variables for each captured group.
             row_title = $2
             row_answers = $3
-            row_answers = replace_answers row_answers, name_attribute + '[' + row_title.strip.downcase.gsub(/[[:punct:]]/, '').gsub(/\s+/, '_') + ']'
+            row_answers = replace_answers row_answers, name_attribute + '[' + row_title.strip.downcase.gsub(/[[:punct:]]/, '').gsub(/\s+/, '_') + ']', ''
             row_answers = '<div>' + row_title + '</div>' + row_answers
         end
         return answers
     end
 
-    def replace_answers(answers, name_attribute)
+    def replace_answers(answers, name_attribute, id_attribute)
         answer_type = get_type answers
         case answer_type
         when :select
@@ -90,7 +93,7 @@ class Parser
                 # Set the HTML for the answer.
                 answer_html = '<option value="' + answer_text + '"' + selected_attribute + '>'
             end
-            answers = '<select name="' + name_attribute + '">' + answers + '</select>'
+            answers = '<select id="' + id_attribute + '" name="' + name_attribute + '">' + answers + '</select>'
         when :radio, :checkbox
             answers.gsub! @regex[answer_type] do |answer|
                 # Assign meaningful variables for each captured group.
@@ -101,11 +104,11 @@ class Parser
                 selected_attribute = (selected == '*') ? ' selected' : ''
 
                 # Set the HTML for the answer.
-                answer_html = '<input name="' + name_attribute + '" type="' + answer_type.to_s + '" value="' + answer_text.strip + '"' + selected_attribute + '>'
+                answer_html = '<input id="' + id_attribute + '" name="' + name_attribute + '" type="' + answer_type.to_s + '" value="' + answer_text.strip + '"' + selected_attribute + '>'
             end
         when :area
             answers.gsub! @regex[answer_type] do |answer|
-                answer_html = '<textarea name="' + name_attribute + '"></textarea>'
+                answer_html = '<textarea id="' + id_attribute + '" name="' + name_attribute + '"></textarea>'
             end
         when :line
             answers.gsub! @regex[answer_type] do |answer|
@@ -115,7 +118,7 @@ class Parser
 
                 # Set the HTML for the input tag.
                 type_attribute = (line_type) ? line_type.downcase : 'text'
-                line_html = '<input name="' + name_attribute + '" type="' + type_attribute + '">'
+                line_html = '<input id="' + id_attribute + '" name="' + name_attribute + '" type="' + type_attribute + '">'
 
                 # Set the HTML for the answer.
                 line_replace = (line_type) ? line_delim + '(' + line_type + ')' : line_delim
