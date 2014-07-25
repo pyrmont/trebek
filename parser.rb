@@ -1,8 +1,10 @@
+require 'erb'
+
 class Parser
     attr_reader :regex
 
     def initialize
-        # Set up all the regular expressions we'll use.
+        # Set up the regular expressions we'll use.
         @regex = {}
         @regex[:question] = /^(Q\.(\*)?\s+((?:(?!\n|{).)*)(?:{((?:(?!\n|}).)*)})?\n(?:!\s+((?:(?!\n).)*)\n)?(?:A.\s+)?((?:(?!\n\n).)*))/m
         @regex[:title] = /^((.*):\s+(.*))/
@@ -11,6 +13,24 @@ class Parser
         @regex[:checkbox] = /((?:\[(\*| )\])\s+((?:(?!\[(?:\*| )\]).)*))/
         @regex[:area] = /(_{3,}\n_{3,}(?:\n_{3,})*)/m
         @regex[:line] = /(.*(_{3,})(?:\((.*)\))?.*)/
+
+        # Set up the HTML tags we'll use.
+        @html = {}
+        @html[:question] = %{<div class="question <%= requirement_class %>"><%= question_text %></div>}
+        @html[:instruction] = %{<div class="instruction"><%= instruction_text %></div>}
+        @html[:answers] = %{<div class="answers"><%= answers %></div>}
+        @html[:group] = %{<div><%= row_title %></div>}
+        @html[:select] = %{<select id="<%= id_attribute %>" name="<%= name_attribute %>"><%= answers %></select>}
+        @html[:option] = %{<option value="<%= answer_text %>" <%= selected_attribute %>><%= answer_text %></option>}
+        @html[:checkradio] = %{<input id="<% id_attribute + '_' + input_number.to_s %>" name="<%= name_attribute + optional_brackets %>" type="<%= answer_type.to_s %>" value="<%= answer_text %>" <%= selected_attribute %>><label for="<%= id_attribute + '_' + input_number.to_s %>"><%= answer_text %></label>}
+        @html[:area] = %{<textarea id="<%= id_attribute %>" name="<%= name_attribute %>"></textarea>}
+        @html[:line] = %{<input id="<%= id_attribute %>" name="<%= name_attribute %>" type="<%= type_attribute %>">}
+
+        # Create separate ERB renderers for each tag.
+        @tags = {}
+        @html.each do |key, element|
+            @tags[key] = ERB.new element
+        end
     end
 
     def parse(contents)
@@ -43,26 +63,22 @@ class Parser
             html = {}
 
             # Set the class name for whether the question must be answered or not.
-            requirement_class = (requirement == '*') ? ' required' : ''
+            requirement_class = (requirement == '*') ? 'required' : ''
 
             # Set the HTML for the question.
-            html[:question] = '<div class="question' + requirement_class + '">' + question_text + '</div>'
+            question_html = @tags[:question].result(binding)
 
             # Set the HTML for the instruction.
-            html[:instruction] = (instruction_text) ? '<div class="instruction">' + instruction_text + '</div>' : ''
+            instruction_html = (instruction_text) ? @tags[:instruction].result(binding) : ''
 
             # Parse and replace the group of answers or answers.
-            if is_group? answers
-                answers = replace_group answers, name_attribute, id_attribute
-            else
-                answers = replace_answers answers, name_attribute, id_attribute
-            end
+            answers = (is_group? answers) ? replace_group(answers, name_attribute, id_attribute) : replace_answers(answers, name_attribute, id_attribute)
 
             # Set the HTML for the answers.
-            html[:answers] = '<div class="answers">' + answers + '</div>'
+            answers_html = @tags[:answers].result(binding)
 
             # Return the HTML.
-            html[:question] + html[:instruction] + html[:answers]
+            question_html + instruction_html + answers_html
         end
         return result
     end
@@ -75,7 +91,7 @@ class Parser
             row_title = $2
             row_answers = $3
             row_answers = replace_answers row_answers, name_attribute + '[' + row_title.strip.downcase.gsub(/[[:punct:]]/, '').gsub(/\s+/, '_') + ']', id_attribute + '_' + row_number.to_s
-            row_answers = '<div>' + row_title + '</div>' + row_answers
+            row_answers = @tags[:group].result(binding) + row_answers
         end
         return answers
     end
@@ -90,12 +106,12 @@ class Parser
                 answer_text = $3
 
                 # Set the selected attribute.
-                selected_attribute = (selected == '*') ? ' selected' : ''
+                selected_attribute = (selected == '*') ? 'selected' : ''
 
                 # Set the HTML for the answer.
-                answer_html = '<option value="' + answer_text + '"' + selected_attribute + '>' + answer_text + '</option>'
+                answer_html = @tags[:option].result(binding)
             end
-            answers = '<select id="' + id_attribute + '" name="' + name_attribute + '">' + answers + '</select>'
+            answers = @tags[:select].result(binding)
         when :radio, :checkbox
             input_number = 0
             answers.gsub! @regex[answer_type] do |answer|
@@ -106,7 +122,7 @@ class Parser
                 answer_text = $3
 
                 # Set the selected attribute.
-                selected_attribute = (selected == '*') ? ' selected' : ''
+                selected_attribute = (selected == '*') ? 'selected' : ''
 
                 # Clean up the answer of any leading or trailing space.
                 answer_text = answer_text.strip
@@ -115,11 +131,11 @@ class Parser
                 optional_brackets = (answer_type == :checkbox) ? '[]' : ''
 
                 # Set the HTML for the answer.
-                answer_html = '<input id="' + id_attribute + '_' + input_number.to_s + '" name="' + name_attribute + optional_brackets + '" type="' + answer_type.to_s + '" value="' + answer_text + '"' + selected_attribute + '><label for="' + id_attribute + '_' + input_number.to_s + '">' + answer_text + '</label>'
+                answer_html = @tags[:checkradio].result(binding)
             end
         when :area
             answers.gsub! @regex[answer_type] do |answer|
-                answer_html = '<textarea id="' + id_attribute + '" name="' + name_attribute + '"></textarea>'
+                answer_html = @tags[:area].result(binding)
             end
         when :line
             answers.gsub! @regex[answer_type] do |answer|
@@ -129,7 +145,7 @@ class Parser
 
                 # Set the HTML for the input tag.
                 type_attribute = (line_type) ? line_type.downcase : 'text'
-                line_html = '<input id="' + id_attribute + '" name="' + name_attribute + '" type="' + type_attribute + '">'
+                line_html = @tags[:line].result(binding)
 
                 # Set the HTML for the answer.
                 line_replace = (line_type) ? line_delim + '(' + line_type + ')' : line_delim
