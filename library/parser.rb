@@ -7,7 +7,7 @@ class Parser
         # Set up the regular expressions we'll use.
         @regex = {}
         @regex[:question] = /^(Q\.(\*)?\s+((?:(?!\n|{).)*)(?:{((?:(?!\n|}).)*)})?\n(?:!\s+((?:(?!\n).)*)\n)?(?:A.\s+)?((?:(?!\n\n).)*))/m
-        @regex[:title] = /^((.*):\s+(.*))/
+        @regex[:row] = /^((.*):\s+(.*))/
         @regex[:select] = /((?:-(\*|-)-)\s+((?:(?!-(?:\*|-)-).)*))/
         @regex[:radio] = /((?:\((\*| )\))\s+((?:(?!\((?:\*| )\)).)*))/
         @regex[:checkbox] = /((?:\[(\*| )\])\s+((?:(?!\[(?:\*| )\]).)*))/
@@ -19,7 +19,7 @@ class Parser
         @html[:question] = %{<div class="question <%= requirement_class %>"><%= question_text %></div>}
         @html[:instruction] = %{<div class="instruction"><%= instruction_text %></div>}
         @html[:answers] = %{<div class="answers"><%= answers %></div>}
-        @html[:group] = %{<div><%= row_title %></div>}
+        @html[:row] = %{<div class="row"><div class="title"><%= row_title %></div><div><%= row_answers %></div></div>}
         @html[:select] = %{<select id="<%= id_attribute %>" name="<%= name_attribute %>"><%= answers %></select>}
         @html[:option] = %{<option value="<%= answer_text %>" <%= selected_attribute %>><%= answer_text %></option>}
         @html[:checkradio] = %{<input id="<%= id_attribute + '_' + input_number.to_s %>" name="<%= name_attribute + optional_brackets %>" type="<%= answer_type.to_s %>" value="<%= answer_text %>" <%= selected_attribute %>><label for="<%= id_attribute + '_' + input_number.to_s %>"><%= answer_text %></label>}
@@ -90,7 +90,7 @@ class Parser
 
     def replace_group(answers, name_attribute, id_attribute)
         row_number = 0
-        answers.gsub! @regex[:title] do |row|
+        answers.gsub! @regex[:row] do |row|
             # Increment the row number.
             row_number = row_number + 1
 
@@ -105,7 +105,7 @@ class Parser
             row_answers = replace_answers row_answers, name_attribute + '[' + row_title.strip.downcase.gsub(/[[:punct:]]/, '').gsub(/\s+/, '_') + ']', id_attribute + '_' + row_number.to_s
 
             # Add the row answers to the title of the row.
-            row_answers = @tags[:group].result(binding) + row_answers
+            row_html = @tags[:row].result(binding)
         end
         return answers
     end
@@ -185,7 +185,7 @@ class Parser
     end
 
     def is_group?(answers)
-        return answers.scan(@regex[:title]).length > 0
+        return answers.scan(@regex[:row]).length > 0
     end
 
     def get_type(answers)
