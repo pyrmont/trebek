@@ -59,9 +59,6 @@ class Parser
             # Set the ID attribute to be equal to the name_attribute.
             id_attribute = name_attribute
 
-            # Create an empty hash for the HTML.
-            html = {}
-
             # Set the class name for whether the question must be answered or not.
             requirement_class = (requirement == '*') ? 'required' : ''
 
@@ -86,11 +83,17 @@ class Parser
     def replace_group(answers, name_attribute, id_attribute)
         row_number = 0
         answers.gsub! @regex[:title] do |row|
+            # Increment the row number.
             row_number = row_number + 1
+
             # Assign meaningful variables for each captured group.
             row_title = $2
             row_answers = $3
+
+            # Replace the rows with the appropriate HTML.
             row_answers = replace_answers row_answers, name_attribute + '[' + row_title.strip.downcase.gsub(/[[:punct:]]/, '').gsub(/\s+/, '_') + ']', id_attribute + '_' + row_number.to_s
+
+            # Add the row answers to the title of the row.
             row_answers = @tags[:group].result(binding) + row_answers
         end
         return answers
@@ -115,8 +118,9 @@ class Parser
         when :radio, :checkbox
             input_number = 0
             answers.gsub! @regex[answer_type] do |answer|
-                # Increment the input number
+                # Increment the input number.
                 input_number = input_number + 1
+
                 # Assign meaningful variables for each captured group.
                 selected = $2
                 answer_text = $3
