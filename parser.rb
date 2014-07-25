@@ -68,11 +68,13 @@ class Parser
     end
 
     def replace_group(answers, name_attribute, id_attribute)
+        row_number = 0
         answers.gsub! @regex[:title] do |row|
+            row_number = row_number + 1
             # Assign meaningful variables for each captured group.
             row_title = $2
             row_answers = $3
-            row_answers = replace_answers row_answers, name_attribute + '[' + row_title.strip.downcase.gsub(/[[:punct:]]/, '').gsub(/\s+/, '_') + ']', ''
+            row_answers = replace_answers row_answers, name_attribute + '[' + row_title.strip.downcase.gsub(/[[:punct:]]/, '').gsub(/\s+/, '_') + ']', id_attribute + '_' + row_number.to_s
             row_answers = '<div>' + row_title + '</div>' + row_answers
         end
         return answers
@@ -95,7 +97,10 @@ class Parser
             end
             answers = '<select id="' + id_attribute + '" name="' + name_attribute + '">' + answers + '</select>'
         when :radio, :checkbox
+            input_number = 0
             answers.gsub! @regex[answer_type] do |answer|
+                # Increment the input number
+                input_number = input_number + 1
                 # Assign meaningful variables for each captured group.
                 selected = $2
                 answer_text = $3
@@ -103,8 +108,10 @@ class Parser
                 # Set the selected attribute.
                 selected_attribute = (selected == '*') ? ' selected' : ''
 
+                # Increment the input
+
                 # Set the HTML for the answer.
-                answer_html = '<input id="' + id_attribute + '" name="' + name_attribute + '" type="' + answer_type.to_s + '" value="' + answer_text.strip + '"' + selected_attribute + '>'
+                answer_html = '<input id="' + id_attribute + '_' + input_number.to_s + '" name="' + name_attribute + '" type="' + answer_type.to_s + '" value="' + answer_text.strip + '"' + selected_attribute + '>'
             end
         when :area
             answers.gsub! @regex[answer_type] do |answer|
