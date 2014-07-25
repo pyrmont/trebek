@@ -22,7 +22,7 @@ class Parser
         @html[:group] = %{<div><%= row_title %></div>}
         @html[:select] = %{<select id="<%= id_attribute %>" name="<%= name_attribute %>"><%= answers %></select>}
         @html[:option] = %{<option value="<%= answer_text %>" <%= selected_attribute %>><%= answer_text %></option>}
-        @html[:checkradio] = %{<input id="<% id_attribute + '_' + input_number.to_s %>" name="<%= name_attribute + optional_brackets %>" type="<%= answer_type.to_s %>" value="<%= answer_text %>" <%= selected_attribute %>><label for="<%= id_attribute + '_' + input_number.to_s %>"><%= answer_text %></label>}
+        @html[:checkradio] = %{<input id="<%= id_attribute + '_' + input_number.to_s %>" name="<%= name_attribute + optional_brackets %>" type="<%= answer_type.to_s %>" value="<%= answer_text %>" <%= selected_attribute %>><label for="<%= id_attribute + '_' + input_number.to_s %>"><%= answer_text %></label>}
         @html[:area] = %{<textarea id="<%= id_attribute %>" name="<%= name_attribute %>"></textarea>}
         @html[:line] = %{<input id="<%= id_attribute %>" name="<%= name_attribute %>" type="<%= type_attribute %>">}
 
