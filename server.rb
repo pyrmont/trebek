@@ -5,5 +5,5 @@ get '/' do
 end
 
 get '/survey' do
-    send_file 'public/survey.index.html'
+    send_file 'generated/survey.html'
 end

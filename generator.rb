@@ -1,5 +1,5 @@
 require 'erb'
-require './lib/parser'
+require './library/parser'
 
 # Use the first argument as the path to the file to be parsed (abort if there is a problem).
 abort "Error: Trebek requires the path of the file to be parsed to be passed as an argument." unless filename = ARGV[0]
@@ -23,7 +23,7 @@ erb = ERB.new File.read('./views/frame.erb')
 # Insert the parsed contents into the HTML template.
 output = erb.result
 
-# Save the output in public/survey.index.html.
-File.open('./public/survey.index.html', 'w') do |file|
+# Save the output in generated/survey.html.
+File.open('./generated/survey.html', 'w') do |file|
     file.write output
 end

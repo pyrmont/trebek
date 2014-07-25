@@ -2,8 +2,8 @@
 .bundle
 vendor/bundler
 
-# The generated HTML survey file.
-public/survey.index.html
+# Generated files.
+generated
 
 # Generated configs
 config/environment.rb
