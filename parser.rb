@@ -111,8 +111,11 @@ class Parser
                 # Clean up the answer of any leading or trailing space.
                 answer_text = answer_text.strip
 
+                # Checkboxes need to use square brackets to identify the name.
+                optional_brackets = (answer_type == :checkbox) ? '[]' : ''
+
                 # Set the HTML for the answer.
-                answer_html = '<input id="' + id_attribute + '_' + input_number.to_s + '" name="' + name_attribute + '" type="' + answer_type.to_s + '" value="' + answer_text + '"' + selected_attribute + '><label for="' + id_attribute + '_' + input_number.to_s + '">' + answer_text + '</label>'
+                answer_html = '<input id="' + id_attribute + '_' + input_number.to_s + '" name="' + name_attribute + optional_brackets + '" type="' + answer_type.to_s + '" value="' + answer_text + '"' + selected_attribute + '><label for="' + id_attribute + '_' + input_number.to_s + '">' + answer_text + '</label>'
             end
         when :area
             answers.gsub! @regex[answer_type] do |answer|
