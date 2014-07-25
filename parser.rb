@@ -1,7 +1,7 @@
 require 'erb'
+require 'redcarpet'
 
 class Parser
-    attr_reader :regex
 
     def initialize
         # Set up the regular expressions we'll use.
@@ -26,17 +26,21 @@ class Parser
         @html[:area] = %{<textarea id="<%= id_attribute %>" name="<%= name_attribute %>"></textarea>}
         @html[:line] = %{<input id="<%= id_attribute %>" name="<%= name_attribute %>" type="<%= type_attribute %>">}
 
-        # Create separate ERB renderers for each tag.
+        # Set up separate ERB renderers for each tag.
         @tags = {}
         @html.each do |key, element|
             @tags[key] = ERB.new element
         end
+
+        # Set up the parser.
+        renderer = Redcarpet::Render::HTML.new(options = {})
+        @markdown = Redcarpet::Markdown.new(renderer, extensions = {})
     end
 
     def parse(contents)
         # Parse and replace the questions.
         result = replace_questions contents
-        return result
+        result = replace_markdown result, false
     end
 
     def replace_questions(contents)
@@ -52,6 +56,10 @@ class Parser
             name_attribute = $4
             instruction_text = $5
             answers = $6
+
+            # Convert Markdown in the question text and the instruction text.
+            question_text = replace_markdown question_text
+            instruction_text = replace_markdown instruction_text
 
             # Check the name attribute is set and if not use the incremented generic name.
             name_attribute = (name_attribute) ? name_attribute : 'question_' + question_number.to_s
@@ -90,6 +98,9 @@ class Parser
             row_title = $2
             row_answers = $3
 
+            # Convert Markdown in the row title.
+            row_title = replace_markdown row_title
+
             # Replace the rows with the appropriate HTML.
             row_answers = replace_answers row_answers, name_attribute + '[' + row_title.strip.downcase.gsub(/[[:punct:]]/, '').gsub(/\s+/, '_') + ']', id_attribute + '_' + row_number.to_s
 
@@ -125,6 +136,9 @@ class Parser
                 selected = $2
                 answer_text = $3
 
+                # Convert Markdown in the answer text.
+                answer_text = replace_markdown answer_text
+
                 # Set the selected attribute.
                 selected_attribute = (selected == '*') ? 'selected' : ''
 
@@ -154,10 +168,20 @@ class Parser
                 # Set the HTML for the answer.
                 line_replace = (line_type) ? line_delim + '(' + line_type + ')' : line_delim
                 answer_html = answer.gsub(line_replace, line_html)
+
+                # Convert Markdown in the answer.
+                answer_html = replace_markdown answer_html
             end
         end
 
         return answers
+    end
+
+    def replace_markdown(text, inline = true)
+        return text unless text
+
+        text = @markdown.render text
+        text = (inline) ? text.gsub(/^<p>/, '').gsub(/<\/p>$/, '') : text
     end
 
     def is_group?(answers)
