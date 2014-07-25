@@ -46,7 +46,7 @@ class Parser
             requirement_class = (requirement == '*') ? ' required' : ''
 
             # Set the HTML for the question.
-            html[:question] = '<div class="question' + requirement_class + '"><label for="' + id_attribute + '">' + question_text + '</div>'
+            html[:question] = '<div class="question' + requirement_class + '">' + question_text + '</div>'
 
             # Set the HTML for the instruction.
             html[:instruction] = (instruction_text) ? '<div class="instruction">' + instruction_text + '</div>' : ''
@@ -93,7 +93,7 @@ class Parser
                 selected_attribute = (selected == '*') ? ' selected' : ''
 
                 # Set the HTML for the answer.
-                answer_html = '<option value="' + answer_text + '"' + selected_attribute + '>'
+                answer_html = '<option value="' + answer_text + '"' + selected_attribute + '>' + answer_text + '</option>'
             end
             answers = '<select id="' + id_attribute + '" name="' + name_attribute + '">' + answers + '</select>'
         when :radio, :checkbox
@@ -108,10 +108,11 @@ class Parser
                 # Set the selected attribute.
                 selected_attribute = (selected == '*') ? ' selected' : ''
 
-                # Increment the input
+                # Clean up the answer of any leading or trailing space.
+                answer_text = answer_text.strip
 
                 # Set the HTML for the answer.
-                answer_html = '<input id="' + id_attribute + '_' + input_number.to_s + '" name="' + name_attribute + '" type="' + answer_type.to_s + '" value="' + answer_text.strip + '"' + selected_attribute + '>'
+                answer_html = '<input id="' + id_attribute + '_' + input_number.to_s + '" name="' + name_attribute + '" type="' + answer_type.to_s + '" value="' + answer_text + '"' + selected_attribute + '><label for="' + id_attribute + '_' + input_number.to_s + '">' + answer_text + '</label>'
             end
         when :area
             answers.gsub! @regex[answer_type] do |answer|
