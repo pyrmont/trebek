@@ -1,0 +1,11 @@
+body { background: #ccc; font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; width: 100%; }
+
+form { margin: 0 auto; width: 60%; }
+
+form div.question { font-weight: 600; margin-bottom: 0.4rem; }
+
+form div.instruction { font-style: italic; opacity: 0.5; margin-bottom: 0.4rem; }
+
+form div.answers { margin-bottom: 2rem; }
+form div.answers label { margin: 0 2rem 0 0.5rem; }
+form div.answers textarea { height: 10rem; width: 80%; }
