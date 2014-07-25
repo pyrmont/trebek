@@ -1,5 +1,5 @@
 require 'erb'
-require './parser'
+require './lib/parser'
 
 # Use the first argument as the path to the file to be parsed (abort if there is a problem).
 abort "Error: Trebek requires the path of the file to be parsed to be passed as an argument." unless filename = ARGV[0]
