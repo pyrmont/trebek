@@ -12,13 +12,13 @@ contents = File.read(filename)
 parser = Parser.new
 
 # Parse the contents.
-@form = parser.parse contents
-
-# Create the ERB renderer.
-erb = ERB.new File.read('views/frame.erb')
+@survey = parser.parse contents
 
 # Set the title of the page.
 @title = (ARGV[1]) ? ARGV[1] : 'Trebek Asks You the Questions!'
+
+# Create the ERB renderer.
+erb = ERB.new File.read('views/frame.erb')
 
 # Insert the parsed contents into the HTML template.
 output = erb.result

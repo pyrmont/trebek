@@ -9,7 +9,10 @@
 </head>
 <body>
 
-	<%= @form %>
+	<form action="/submit" method="post">
+        <%= @survey %>
+        <input type="submit" value="Submit">
+    </form>
 
 </body>
 </html>
