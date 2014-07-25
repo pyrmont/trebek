@@ -2,11 +2,13 @@
 .bundle
 vendor/bundler
 
+# The generated HTML survey file.
+public/survey.index.html
+
 # Generated configs
 config/environment.rb
 
-# Example files used in development
-examples
+# Files used in development
 development
 
 # The usual suspects

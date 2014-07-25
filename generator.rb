@@ -18,10 +18,12 @@ parser = Parser.new
 @title = (ARGV[1]) ? ARGV[1] : 'Trebek Asks You the Questions!'
 
 # Create the ERB renderer.
-erb = ERB.new File.read('views/frame.erb')
+erb = ERB.new File.read('./views/frame.erb')
 
 # Insert the parsed contents into the HTML template.
 output = erb.result
 
-# Print out the modified content.
-puts output
+# Save the output in public/survey.index.html.
+File.open('./public/survey.index.html', 'w') do |file|
+    file.write output
+end
