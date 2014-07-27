@@ -32,7 +32,7 @@ class Parser
             @tags[key] = ERB.new element
         end
 
-        # Set up the parser.
+        # Set up the Markdown renderer.
         renderer = Redcarpet::Render::HTML.new(options = {})
         @markdown = Redcarpet::Markdown.new(renderer, extensions = {})
     end
