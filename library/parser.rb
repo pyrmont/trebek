@@ -3,6 +3,10 @@ require 'redcarpet'
 
 class Parser
 
+    attr_reader :answers
+
+    Answer = Struct.new :name, :answer_text, :question_text, :title_text, :format, :required?
+
     def initialize
         # Set up the regular expressions we'll use.
         @regex = {}
@@ -16,13 +20,13 @@ class Parser
 
         # Set up the HTML tags we'll use.
         @html = {}
-        @html[:question] = %{<div class="question <%= requirement_class %>"><%= question_text %></div>}
-        @html[:instruction] = %{<div class="instruction"><%= instruction_text %></div>}
+        @html[:question] = %{<div class="question <%= requirement_class %>"><%= question_formatted %></div>}
+        @html[:instruction] = %{<div class="instruction"><%= instruction_formatted %></div>}
         @html[:answers] = %{<div class="answers"><%= answers %></div>}
-        @html[:row] = %{<div class="row"><div class="title"><%= row_title %></div><div><%= row_answers %></div></div>}
+        @html[:row] = %{<div class="row"><div class="title"><%= title_formatted %></div><div><%= row_answers %></div></div>}
         @html[:select] = %{<select id="<%= id_attribute %>" name="<%= name_attribute %>"><%= answers %></select>}
         @html[:option] = %{<option value="<%= answer_text %>" <%= selected_attribute %>><%= answer_text %></option>}
-        @html[:checkradio] = %{<input id="<%= id_attribute + '_' + input_number.to_s %>" name="<%= name_attribute + optional_brackets %>" type="<%= answer_type.to_s %>" value="<%= answer_text %>" <%= selected_attribute %>><label for="<%= id_attribute + '_' + input_number.to_s %>"><%= answer_text %></label>}
+        @html[:checkradio] = %{<input id="<%= id_attribute + '_' + input_number.to_s %>" name="<%= name_attribute + optional_brackets %>" type="<%= answer_type.to_s %>" value="<%= answer_text %>" <%= selected_attribute %>><label for="<%= id_attribute + '_' + input_number.to_s %>"><%= answer_formatted %></label>}
         @html[:area] = %{<textarea id="<%= id_attribute %>" name="<%= name_attribute %>"></textarea>}
         @html[:line] = %{<input id="<%= id_attribute %>" name="<%= name_attribute %>" type="<%= type_attribute %>">}
 
@@ -35,6 +39,9 @@ class Parser
         # Set up the Markdown renderer.
         renderer = Redcarpet::Render::HTML.new(options = {})
         @markdown = Redcarpet::Markdown.new(renderer, extensions = {})
+
+        # Set up the array of answers.
+        @answers = []
     end
 
     def parse(contents)
@@ -58,26 +65,27 @@ class Parser
             answers = $6
 
             # Convert Markdown in the question text and the instruction text.
-            question_text = replace_markdown question_text
-            instruction_text = replace_markdown instruction_text
+            question_formatted = replace_markdown question_text
+            instruction_formatted = replace_markdown instruction_text
 
             # Check the name attribute is set and if not use the incremented generic name.
-            name_attribute = (name_attribute) ? name_attribute : 'question_' + question_number.to_s
+            name_attribute = (name_attribute) ? name_attribute : 'answer_' + question_number.to_s
 
             # Set the ID attribute to be equal to the name_attribute.
             id_attribute = name_attribute
 
             # Set the class name for whether the question must be answered or not.
-            requirement_class = (requirement == '*') ? 'required' : ''
+            question_requirement = (requirement == '*') ? true : false
+            requirement_class = (question_requirement) ? 'required' : ''
 
             # Set the HTML for the question.
             question_html = @tags[:question].result(binding)
 
             # Set the HTML for the instruction.
-            instruction_html = (instruction_text) ? @tags[:instruction].result(binding) : ''
+            instruction_html = (instruction_formatted) ? @tags[:instruction].result(binding) : ''
 
             # Parse and replace the group of answers or answers.
-            answers = (is_group? answers) ? replace_group(answers, name_attribute, id_attribute) : replace_answers(answers, name_attribute, id_attribute)
+            answers = (is_group? answers) ? replace_group(answers, question_text, question_requirement, name_attribute, id_attribute) : replace_answers(answers, question_text, question_requirement, nil, name_attribute, id_attribute)
 
             # Set the HTML for the answers.
             answers_html = @tags[:answers].result(binding)
@@ -88,7 +96,7 @@ class Parser
         return result
     end
 
-    def replace_group(answers, name_attribute, id_attribute)
+    def replace_group(answers, question_text, question_requirement, name_attribute, id_attribute)
         row_number = 0
         answers.gsub! @regex[:row] do |row|
             # Increment the row number.
@@ -99,10 +107,10 @@ class Parser
             row_answers = $3
 
             # Convert Markdown in the row title.
-            row_title = replace_markdown row_title
+            title_formatted = replace_markdown row_title
 
             # Replace the rows with the appropriate HTML.
-            row_answers = replace_answers row_answers, name_attribute + '[' + row_title.strip.downcase.gsub(/[[:punct:]]/, '').gsub(/\s+/, '_') + ']', id_attribute + '_' + row_number.to_s
+            row_answers = replace_answers row_answers, question_text, question_requirement, row_title, name_attribute + '[' + row_title.strip.downcase.gsub(/[[:punct:]]/, '').gsub(/\s+/, '_') + ']', id_attribute + '_' + row_number.to_s
 
             # Add the row answers to the title of the row.
             row_html = @tags[:row].result(binding)
@@ -110,7 +118,12 @@ class Parser
         return answers
     end
 
-    def replace_answers(answers, name_attribute, id_attribute)
+    def replace_answers(answers, question_text, question_requirement, title_text, name_attribute, id_attribute)
+        # Set the default answer format and text.
+        answer_format = 'Text'
+        answer_text = ''
+
+        # Perform replacement based on the answer type.
         answer_type = get_type answers
         case answer_type
         when :select
@@ -119,12 +132,17 @@ class Parser
                 selected = $2
                 answer_text = $3
 
+                # Save the answer.
+                @answers.push Answer.new name_attribute, answer_text, question_text, title_text, answer_format, question_requirement
+
                 # Set the selected attribute.
                 selected_attribute = (selected == '*') ? 'selected' : ''
 
                 # Set the HTML for the answer.
                 answer_html = @tags[:option].result(binding)
             end
+
+            # Set the HTML for the answer.
             answers = @tags[:select].result(binding)
         when :radio, :checkbox
             input_number = 0
@@ -134,16 +152,16 @@ class Parser
 
                 # Assign meaningful variables for each captured group.
                 selected = $2
-                answer_text = $3
+                answer_text = $3.strip
+
+                # Save the answer.
+                @answers.push Answer.new name_attribute, answer_text, question_text, title_text, answer_format, question_requirement
 
                 # Convert Markdown in the answer text.
-                answer_text = replace_markdown answer_text
+                answer_formatted = replace_markdown answer_text
 
                 # Set the selected attribute.
                 selected_attribute = (selected == '*') ? 'selected' : ''
-
-                # Clean up the answer of any leading or trailing space.
-                answer_text = answer_text.strip
 
                 # Checkboxes need to use square brackets to identify the name.
                 optional_brackets = (answer_type == :checkbox) ? '[]' : ''
@@ -153,6 +171,10 @@ class Parser
             end
         when :area
             answers.gsub! @regex[answer_type] do |answer|
+                # Save the answer.
+                @answers.push Answer.new name_attribute, answer_text, question_text, title_text, answer_format, question_requirement
+
+                # Set the HTML for the answer.
                 answer_html = @tags[:area].result(binding)
             end
         when :line
@@ -164,6 +186,12 @@ class Parser
                 # Set the HTML for the input tag.
                 type_attribute = (line_type) ? line_type.downcase : 'text'
                 line_html = @tags[:line].result(binding)
+
+                # Set the answer format based on the type attribute.
+                answer_format = type_attribute.capitalize
+
+                # Save the answer.
+                @answers.push Answer.new name_attribute, answer_text, question_text, title_text, answer_format, question_requirement
 
                 # Set the HTML for the answer.
                 line_replace = (line_type) ? line_delim + '(' + line_type + ')' : line_delim
@@ -178,6 +206,7 @@ class Parser
     end
 
     def replace_markdown(text, inline = true)
+        # If there is no text, return.
         return text unless text
 
         text = @markdown.render text
