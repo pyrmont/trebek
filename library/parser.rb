@@ -5,7 +5,7 @@ class Parser
 
     attr_reader :answers
 
-    Answer = Struct.new :name, :answer_text, :question_text, :title_text, :format, :required?
+    Answer = Struct.new :answer_id, :answer_text, :question_text, :title_text, :format, :required?
 
     def initialize
         # Set up the regular expressions we'll use.
@@ -132,15 +132,15 @@ class Parser
                 selected = $2
                 answer_text = $3
 
-                # Save the answer.
-                @answers.push Answer.new name_attribute, answer_text, question_text, title_text, answer_format, question_requirement
-
                 # Set the selected attribute.
                 selected_attribute = (selected == '*') ? 'selected' : ''
 
                 # Set the HTML for the answer.
                 answer_html = @tags[:option].result(binding)
             end
+
+            # Save the answer.
+            @answers.push Answer.new name_attribute, nil, question_text, title_text, answer_format, question_requirement
 
             # Set the HTML for the answer.
             answers = @tags[:select].result(binding)
@@ -154,9 +154,6 @@ class Parser
                 selected = $2
                 answer_text = $3.strip
 
-                # Save the answer.
-                @answers.push Answer.new name_attribute, answer_text, question_text, title_text, answer_format, question_requirement
-
                 # Convert Markdown in the answer text.
                 answer_formatted = replace_markdown answer_text
 
@@ -168,14 +165,28 @@ class Parser
 
                 # Set the HTML for the answer.
                 answer_html = @tags[:checkradio].result(binding)
+
+                # Save the answer.
+                answer_id = name_attribute.gsub('[', '_').gsub(']', '')
+                if answer_type == :checkbox
+                    @answers.push Answer.new answer_id + '_' + input_number.to_s, answer_text, question_text, title_text, answer_format, question_requirement
+                elsif answer_type == :radio && input_number == 1
+                    @answers.push Answer.new answer_id, nil, question_text, title_text, answer_format, question_requirement
+                end
+
+                # Return the HTML.
+                answer_html
             end
         when :area
             answers.gsub! @regex[answer_type] do |answer|
+                # Set the HTML for the answer.
+                answer_html = @tags[:area].result(binding)
+
                 # Save the answer.
                 @answers.push Answer.new name_attribute, answer_text, question_text, title_text, answer_format, question_requirement
 
-                # Set the HTML for the answer.
-                answer_html = @tags[:area].result(binding)
+                # Return the HTML.
+                answer_html
             end
         when :line
             answers.gsub! @regex[answer_type] do |answer|
@@ -190,15 +201,18 @@ class Parser
                 # Set the answer format based on the type attribute.
                 answer_format = type_attribute.capitalize
 
-                # Save the answer.
-                @answers.push Answer.new name_attribute, answer_text, question_text, title_text, answer_format, question_requirement
-
                 # Set the HTML for the answer.
                 line_replace = (line_type) ? line_delim + '(' + line_type + ')' : line_delim
                 answer_html = answer.gsub(line_replace, line_html)
 
                 # Convert Markdown in the answer.
                 answer_html = replace_markdown answer_html
+
+                # Save the answer.
+                @answers.push Answer.new name_attribute, answer_text, question_text, title_text, answer_format, question_requirement
+
+                # Return the HTML.
+                answer_html
             end
         end
 
