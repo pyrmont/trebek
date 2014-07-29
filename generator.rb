@@ -40,44 +40,65 @@ end
 answers = parser.answers
 
 # Open the database.
+require 'logger'
+# database = Sequel.sqlite filename[:database], :loggers => [Logger.new($stdout)]
 database = Sequel.sqlite filename[:database]
 
 # Create the survey table.
-database.create_table :surveys do
-    primary_key :id
-    String :name, :text=> true
-    TrueClass :open
+unless database.table_exists?(:surveys)
+    database.create_table :surveys do
+        primary_key :id
+        String :name, :text=> true
+        TrueClass :completed
+        TrueClass :open
+    end
 end
+
+# Set the name of the survey.
+survey_name = File.basename filename[:survey], '.*'
 
 # Insert the details about this survey into the table.
 surveys_table = database[:surveys]
-surveys_table.insert :name => 'Survey', :open => false
-
-# Create the table for the answer metadata.
-database.create_table :survey_1_metadata do
-    primary_key :id
-    foreign_key :survey_id, :surveys
-    String :answer_name, :text => true
-    String :answer_text, :text => true
-    String :question_text, :text => true
-    String :title_text, :text => true
-    String :format, :text => true
-    TrueClass :required
-    TrueClass :current
+if survey_id = surveys_table.where(:name => survey_name).get(:id)
+    is_update = true
+else
+    survey_id = surveys_table.insert :name => survey_name, :open => false # Note: This is adapter dependent.
+    is_update = false
 end
 
-# Insert the metadata for each answer into the table.
-metadata_table = database[:survey_1_metadata]
-answers.each do |answer|
-    metadata_table.insert :survey_id => 1, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true
-end
+# Set the name of the tables.
+metadata_name = 'survey_' + survey_id.to_s + '_metadata'
+responses_name = 'survey_' + survey_id.to_s + '_responses'
 
-# Create the table for the answer responses.
-database.create_table :survey_1_responses do
-    primary_key :id
-    foreign_key :survey_id, :surveys
-    String :session, :text => true
+if is_update
+    puts 'Woo!'
+else
+    # Create the table for the answer metadata.
+    database.create_table metadata_name do
+        primary_key :id
+        foreign_key :survey_id, :surveys
+        String :answer_name, :text => true
+        String :answer_text, :text => true
+        String :question_text, :text => true
+        String :title_text, :text => true
+        String :format, :text => true
+        TrueClass :required
+        TrueClass :current
+    end
+
+    # Insert the metadata for each answer into the table.
+    metadata_table = database[metadata_name.to_sym]
     answers.each do |answer|
-        String answer.answer_id, :text => true
+        metadata_table.insert :survey_id => survey_id.to_s, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true
+    end
+
+    # Create the table for the answer responses.
+    database.create_table responses_name do
+        primary_key :id
+        foreign_key :survey_id, :surveys
+        String :session, :text => true
+        answers.each do |answer|
+            String answer.answer_id, :text => true
+        end
     end
 end
