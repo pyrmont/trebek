@@ -40,8 +40,6 @@ end
 answers = parser.answers
 
 # Open the database.
-require 'logger'
-# database = Sequel.sqlite filename[:database], :loggers => [Logger.new($stdout)]
 database = Sequel.sqlite filename[:database]
 
 # Create the survey table.
@@ -67,11 +65,27 @@ else
 end
 
 # Set the name of the tables.
-metadata_name = 'survey_' + survey_id.to_s + '_metadata'
-responses_name = 'survey_' + survey_id.to_s + '_responses'
+metadata_name = ('survey_' + survey_id.to_s + '_metadata').to_sym
+responses_name = ('survey_' + survey_id.to_s + '_responses').to_sym
 
 if is_update
-    puts 'Woo!'
+    # Insert updated metadata for each answer into the table.
+    metadata_table = database[metadata_name]
+    metadata_table.update(:current => false)
+    answers.each do |answer|
+        unless 1 == metadata_table.where(:answer_name => answer.answer_id).update(:survey_id => survey_id.to_s, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true)
+            metadata_table.insert :survey_id => survey_id.to_s, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true
+        end
+    end
+
+    # Update columns in the responses table.
+    columns = database[responses_name].columns
+    answers.each do |answer|
+        unless columns.include? answer.answer_id.to_sym
+            database.add_column responses_name.to_sym, answer.answer_id, String, :text => true
+        end
+    end
+
 else
     # Create the table for the answer metadata.
     database.create_table metadata_name do
@@ -87,7 +101,7 @@ else
     end
 
     # Insert the metadata for each answer into the table.
-    metadata_table = database[metadata_name.to_sym]
+    metadata_table = database[metadata_name]
     answers.each do |answer|
         metadata_table.insert :survey_id => survey_id.to_s, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true
     end
