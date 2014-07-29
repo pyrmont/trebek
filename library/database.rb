@@ -13,6 +13,8 @@ class Database
                 String :name, :text=> true
                 TrueClass :completed
                 TrueClass :open
+                DateTime :created_at
+                DateTime :updated_at
             end
         end
     end
@@ -37,8 +39,8 @@ class Database
             metadata_table = @store[metadata_name]
             metadata_table.update(:current => false)
             answers.each do |answer|
-                unless 1 == metadata_table.where(:answer_name => answer.answer_id).update(:survey_id => survey_id, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true)
-                    metadata_table.insert :survey_id => survey_id, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true
+                unless 1 == metadata_table.where(:answer_name => answer.answer_id).update(:survey_id => survey_id, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true, :updated_at => DateTime.now)
+                    metadata_table.insert :survey_id => survey_id, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true, :created_at => DateTime.now
                 end
             end
 
@@ -62,12 +64,14 @@ class Database
                 String :format, :text => true
                 TrueClass :required
                 TrueClass :current
+                DateTime :created_at
+                DateTime :updated_at
             end
 
             # Insert the metadata for each answer into the table.
             metadata_table = @store[metadata_name]
             answers.each do |answer|
-                metadata_table.insert :survey_id => survey_id, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true
+                metadata_table.insert :survey_id => survey_id, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true, :created_at => DateTime.now
             end
 
             # Create the table for the answer responses.
@@ -75,6 +79,8 @@ class Database
                 primary_key :id
                 foreign_key :survey_id, :surveys
                 String :session, :text => true
+                DateTime :created_at
+                DateTime :updated_at
                 answers.each do |answer|
                     String answer.answer_id, :text => true
                 end
