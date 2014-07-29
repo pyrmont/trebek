@@ -4,6 +4,6 @@ get '/' do
     'Your mother.'
 end
 
-get '/survey' do
-    send_file 'generated/survey.html'
+get '/survey/:id' do
+    send_file 'built/survey_' + params[:id] + '.html'
 end
