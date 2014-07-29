@@ -140,7 +140,7 @@ class Parser
             end
 
             # Save the answer.
-            @answers.push Answer.new name_attribute, nil, question_text, title_text, answer_format, question_requirement
+            @answers.push Answer.new name_attribute, '', question_text, title_text, answer_format, question_requirement
 
             # Set the HTML for the answer.
             answers = @tags[:select].result(binding)
@@ -171,7 +171,7 @@ class Parser
                 if answer_type == :checkbox
                     @answers.push Answer.new answer_id + '_' + input_number.to_s, answer_text, question_text, title_text, answer_format, question_requirement
                 elsif answer_type == :radio && input_number == 1
-                    @answers.push Answer.new answer_id, nil, question_text, title_text, answer_format, question_requirement
+                    @answers.push Answer.new answer_id, '', question_text, title_text, answer_format, question_requirement
                 end
 
                 # Return the HTML.
