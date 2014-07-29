@@ -31,11 +31,6 @@ erb = ERB.new File.read('./views/frame.erb')
 # Insert the parsed contents into the HTML template.
 output = erb.result
 
-# Save the output in generated/survey.html.
-File.open('./generated/survey.html', 'w') do |file|
-    file.write output
-end
-
 # Get the answers that were parsed.
 answers = parser.answers
 
@@ -63,18 +58,19 @@ else
     survey_id = surveys_table.insert :name => survey_name, :open => false # Note: This is adapter dependent.
     is_update = false
 end
+survey_id = survey_id.to_s
 
 # Set the name of the tables.
-metadata_name = ('survey_' + survey_id.to_s + '_metadata').to_sym
-responses_name = ('survey_' + survey_id.to_s + '_responses').to_sym
+metadata_name = ('survey_' + survey_id + '_metadata').to_sym
+responses_name = ('survey_' + survey_id + '_responses').to_sym
 
 if is_update
     # Insert updated metadata for each answer into the table.
     metadata_table = database[metadata_name]
     metadata_table.update(:current => false)
     answers.each do |answer|
-        unless 1 == metadata_table.where(:answer_name => answer.answer_id).update(:survey_id => survey_id.to_s, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true)
-            metadata_table.insert :survey_id => survey_id.to_s, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true
+        unless 1 == metadata_table.where(:answer_name => answer.answer_id).update(:survey_id => survey_id, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true)
+            metadata_table.insert :survey_id => survey_id, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true
         end
     end
 
@@ -103,7 +99,7 @@ else
     # Insert the metadata for each answer into the table.
     metadata_table = database[metadata_name]
     answers.each do |answer|
-        metadata_table.insert :survey_id => survey_id.to_s, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true
+        metadata_table.insert :survey_id => survey_id, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true
     end
 
     # Create the table for the answer responses.
@@ -115,4 +111,9 @@ else
             String answer.answer_id, :text => true
         end
     end
+end
+
+# Save the output in the built/ folder using the survey_id.
+File.open('./built/survey_' + survey_id + '.html', 'w') do |file|
+    file.write output
 end

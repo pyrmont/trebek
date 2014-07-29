@@ -3,7 +3,7 @@
 vendor/bundler
 
 # Generated files.
-generated
+built
 
 # Generated configs
 config/environment.rb
