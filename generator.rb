@@ -1,6 +1,6 @@
 require 'erb'
-require 'sequel'
 require './library/parser'
+require './library/database'
 
 # Create an empty hash.
 filename = {}
@@ -31,87 +31,15 @@ erb = ERB.new File.read('./views/frame.erb')
 # Insert the parsed contents into the HTML template.
 output = erb.result
 
-# Get the answers that were parsed.
+# Create the database.
+database = Database.new filename[:database]
+
+# Set up the survey data.
 answers = parser.answers
-
-# Open the database.
-database = Sequel.sqlite filename[:database]
-
-# Create the survey table.
-unless database.table_exists?(:surveys)
-    database.create_table :surveys do
-        primary_key :id
-        String :name, :text=> true
-        TrueClass :completed
-        TrueClass :open
-    end
-end
-
-# Set the name of the survey.
 survey_name = File.basename filename[:survey], '.*'
 
-# Insert the details about this survey into the table.
-surveys_table = database[:surveys]
-if survey_id = surveys_table.where(:name => survey_name).get(:id)
-    is_update = true
-else
-    survey_id = surveys_table.insert :name => survey_name, :open => false # Note: This is adapter dependent.
-    is_update = false
-end
-survey_id = survey_id.to_s
-
-# Set the name of the tables.
-metadata_name = ('survey_' + survey_id + '_metadata').to_sym
-responses_name = ('survey_' + survey_id + '_responses').to_sym
-
-if is_update
-    # Insert updated metadata for each answer into the table.
-    metadata_table = database[metadata_name]
-    metadata_table.update(:current => false)
-    answers.each do |answer|
-        unless 1 == metadata_table.where(:answer_name => answer.answer_id).update(:survey_id => survey_id, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true)
-            metadata_table.insert :survey_id => survey_id, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true
-        end
-    end
-
-    # Update columns in the responses table.
-    columns = database[responses_name].columns
-    answers.each do |answer|
-        unless columns.include? answer.answer_id.to_sym
-            database.add_column responses_name.to_sym, answer.answer_id, String, :text => true
-        end
-    end
-
-else
-    # Create the table for the answer metadata.
-    database.create_table metadata_name do
-        primary_key :id
-        foreign_key :survey_id, :surveys
-        String :answer_name, :text => true
-        String :answer_text, :text => true
-        String :question_text, :text => true
-        String :title_text, :text => true
-        String :format, :text => true
-        TrueClass :required
-        TrueClass :current
-    end
-
-    # Insert the metadata for each answer into the table.
-    metadata_table = database[metadata_name]
-    answers.each do |answer|
-        metadata_table.insert :survey_id => survey_id, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true
-    end
-
-    # Create the table for the answer responses.
-    database.create_table responses_name do
-        primary_key :id
-        foreign_key :survey_id, :surveys
-        String :session, :text => true
-        answers.each do |answer|
-            String answer.answer_id, :text => true
-        end
-    end
-end
+# Save the survey data.
+survey_id = database.save_survey survey_name, answers
 
 # Save the output in the built/ folder using the survey_id.
 File.open('./built/survey_' + survey_id + '.html', 'w') do |file|
