@@ -1,4 +1,5 @@
 require 'sinatra'
+require './library/processor'
 
 get '/' do
     'Your mother.'
@@ -9,5 +10,19 @@ get '/survey/:id' do
 end
 
 post '/submit' do
-    params.inspect
+    # Create the processor
+    processor = Processor.new './development/data/database.sqlite'
+
+    # Process the form with message :no_survey, :closed_survey, :answers_missing or :completed.
+    message = processor.process '1', params
+    case message
+    when :no_survey
+        # Redirect to the no survey page.
+    when :closed_survey
+        # Redirect to the closed survey page.
+    when :answers_missing
+        # Redirect to the survey page.
+    when :completed
+        # Redirect to the completed page.
+    end
 end
