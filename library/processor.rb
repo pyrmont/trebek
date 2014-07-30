@@ -43,7 +43,7 @@ class Processor
         # Create an empty hash.
         answers = {}
 
-        # Based on each
+        # Extract the submitted values for each current answer.
         table.where(:current => true).all do |row|
             # Check if the answer_name is part of an array (indicated in the database by the use of square brackets).
             is_answer_array = (row[:answer_name].index(/\[(?:.+)\]/)) ? true : false
