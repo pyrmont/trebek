@@ -22,6 +22,16 @@ parser = Parser.new
 # Parse the contents.
 @survey = parser.parse contents
 
+# Create the database.
+database = Database.new filename[:database]
+
+# Set up the survey data.
+answers = parser.answers
+survey_name = File.basename filename[:survey], '.*'
+
+# Save the survey data.
+@id = database.save_survey survey_name, answers
+
 # Set the title of the page.
 @title = 'Trebek Asks You the Questions!'
 
@@ -31,17 +41,7 @@ erb = ERB.new File.read('./templates/_frame.erb')
 # Insert the parsed contents into the HTML template.
 output = erb.result
 
-# Create the database.
-database = Database.new filename[:database]
-
-# Set up the survey data.
-answers = parser.answers
-survey_name = File.basename filename[:survey], '.*'
-
-# Save the survey data.
-survey_id = database.save_survey survey_name, answers
-
 # Save the output in the built/ folder using the survey_id.
-File.open('./built/survey_' + survey_id + '.html', 'w') do |file|
+File.open('./built/survey_' + @id + '.html', 'w') do |file|
     file.write output
 end
