@@ -6,7 +6,7 @@ class Processor
 
     def initialize(filename)
         # Create an empty array.
-        @required = []
+        @required = { :completed => [], :uncompleted => [] }
 
         # Open the @store.
         @store = Sequel.sqlite filename
@@ -33,7 +33,7 @@ class Processor
         answers = extract_answers metadata_table, params
 
         # Return an error if required answers were missing.
-        return :answers_missing if @required.count > 0
+        return :answers_missing if @required[:uncompleted].count > 0
 
         # Return true if form processed successfully.
         return :completed
@@ -46,9 +46,9 @@ class Processor
         # Based on each
         table.where(:current => true).all do |row|
             # Check if the answer_name is part of an array (indicated in the database by the use of square brackets).
-            if row[:answer_name].index(/\[(?:.+)\]/) == nil
-                value = (params[row[:answer_name]] == nil || params[row[:answer_name]].empty?) ? nil : params[row[:answer_name]]
-            else
+            is_answer_array = (row[:answer_name].index(/\[(?:.+)\]/)) ? true : false
+
+            if is_answer_array
                 # Get the base answer name.
                 base = row[:answer_name].gsub(/(\[(?:[^\[]+)\])/, '')
 
@@ -62,14 +62,46 @@ class Processor
                 if first_d && second_d
                     value = (params[base] == nil || params[base][first_d] == nil || params[base][first_d][second_d] == nil || params[base][first_d][second_d].empty?) ? nil : params[base][first_d][second_d]
                 elsif first_d
-                    value = (params[base][first_d] == nil || params[base][first_d].empty?) ? nil : params[base][first_d]
+                    value = (params[base] == nil || params[base][first_d] == nil || params[base][first_d].empty?) ? nil : params[base][first_d]
                 end
+
+                # Get the base answer name.
+                base_name = row[:answer_name].gsub(/(\[(?:[^\[]+)\])/, '')
+                answer_array_name = base_name + '[]'
+
+                # Get the names for each dimension of the array (the second dimension may be nil).
+                dimensions = row[:answer_name].scan(/(?:\[([^\[\]]+)\])/)
+                first_d = (dimensions[0][0] && dimensions[0][0].match(/^\d+$/)) ? dimensions[0][0].to_i : dimensions[0][0]
+                second_d = (dimensions[1]) ? dimensions[1][0] : nil
+                second_d = (second_d && second_d.match(/^\d+$/)) ? second_d.to_i : second_d
+
+                # Assign the value based on whether the second dimension exists.
+                if first_d && second_d
+                    value = (params[base_name] == nil || params[base_name][first_d] == nil || params[base_name][first_d][second_d] == nil || params[base_name][first_d][second_d].empty?) ? nil : params[base_name][first_d][second_d]
+                elsif first_d
+                    value = (params[base_name] == nil || params[base_name][first_d] == nil || params[base_name][first_d].empty?) ? nil : params[base_name][first_d]
+                end
+            else
+                value = (params[row[:answer_name]] == nil || params[row[:answer_name]].empty?) ? nil : params[row[:answer_name]]
             end
 
-            if value
-                answers[row[:answer_name]] = value
-            elsif row[:required]
-                @required.push row[:answer_name]
+            # If a value was submitted with the response, save it to the answers hash.
+            answers[row[:answer_name]] = value if value
+
+            # If the question is required, store the question in the appropriate array.
+            if row[:required]
+                if value
+                    if is_answer_array && !(@required[:completed].include? answer_array_name)
+                        @required[:completed].push answer_array_name
+                        @required[:uncompleted].delete answer_array_name
+                    end
+                else
+                    if is_answer_array
+                        @required[:uncompleted].push answer_array_name unless @required[:completed].include? answer_array_name
+                    else
+                        @required[:uncompleted].push row[:answer_name]
+                    end
+                end
             end
         end
 
