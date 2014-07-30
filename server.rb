@@ -6,6 +6,10 @@ get '/' do
 end
 
 get '/survey/:id' do
+    # Redirect to the no survey page if the file doesn't exist.
+    redirect to('error/existence') unless File.exists? 'built/survey_' + params[:id] + '.html'
+
+    # Serve up the file.
     send_file 'built/survey_' + params[:id] + '.html'
 end
 
