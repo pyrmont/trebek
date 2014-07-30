@@ -167,10 +167,11 @@ class Parser
                 answer_html = @tags[:checkradio].result(binding)
 
                 # Save the answer.
-                answer_id = name_attribute.gsub('[', '_').gsub(']', '')
                 if answer_type == :checkbox
-                    @answers.push Answer.new answer_id + '_' + input_number.to_s, answer_text, question_text, title_text, answer_format, question_requirement
+                    answer_id = name_attribute + '[' + (input_number - 1).to_s + ']'
+                    @answers.push Answer.new answer_id, answer_text, question_text, title_text, answer_format, question_requirement
                 elsif answer_type == :radio && input_number == 1
+                    answer_id = name_attribute
                     @answers.push Answer.new answer_id, '', question_text, title_text, answer_format, question_requirement
                 end
 
