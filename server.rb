@@ -31,7 +31,7 @@ post '/submit' do
         redirect to('error/closed')
     when :answers_missing
         # Redirect to the survey page.
-        redirect to('survey/1')
+        redirect to('survey/' + survey_id)
     when :completed
         # Redirect to the completed page.
         redirect to('survey/complete')
