@@ -26,7 +26,7 @@ parser = Parser.new
 @title = 'Trebek Asks You the Questions!'
 
 # Create the ERB renderer.
-erb = ERB.new File.read('./views/frame.erb')
+erb = ERB.new File.read('./templates/_frame.erb')
 
 # Insert the parsed contents into the HTML template.
 output = erb.result
