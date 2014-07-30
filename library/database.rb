@@ -25,7 +25,7 @@ class Database
         if survey_id = surveys_table.where(:name => survey_name).get(:id)
             is_update = true
         else
-            survey_id = surveys_table.insert :name => survey_name, :open => false # Note: This is adapter dependent.
+            survey_id = surveys_table.insert :name => survey_name, :open => false, :created_at => DateTime.now # Note: This is adapter dependent.
             is_update = false
         end
         survey_id = survey_id.to_s
