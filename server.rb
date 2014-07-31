@@ -40,7 +40,7 @@ post '/submit' do
         redirect to('/survey/' + survey_id)
     when :completed
         # Save the data in the database.
-        database.save_response survey_id, response[:answers]
+        database.save_response survey_id, result[:answers]
 
         # Redirect to the completed page.
         redirect to('/survey/completed')
