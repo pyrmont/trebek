@@ -3,10 +3,12 @@ require 'sequel'
 class Database
 
     def initialize(filename)
-        # Open the @store.
+        # Set up the database.
         @store = Sequel.sqlite filename
+    end
 
-        # Create the survey table.
+    def save_survey(survey_name, answers)
+        # Create the surveys table if it doesn't already exist.
         unless @store.table_exists?(:surveys)
             @store.create_table :surveys do
                 primary_key :id
@@ -17,9 +19,7 @@ class Database
                 DateTime :updated_at
             end
         end
-    end
 
-    def save_survey(survey_name, answers)
         # Insert the details about this survey into the table.
         surveys_table = @store[:surveys]
         if survey_id = surveys_table.where(:name => survey_name).get(:id)
@@ -89,6 +89,36 @@ class Database
 
         # Return the survey_id variable.
         return survey_id
+    end
+
+    def survey_exists?(survey_id)
+        # Create the survey table.
+        surveys_table = @store[:surveys]
+
+        # Return whether the survey exists or not.
+        result = (surveys_table.where(:id => survey_id).count == 0) ? false : true
+        return result
+    end
+
+    def survey_open?(survey_id)
+        # Create the survey table.
+        surveys_table = @store[:surveys]
+
+        # Return whether the survey is closed or not.
+        return surveys_table.where(:id => survey_id).get(:open)
+    end
+
+    def get_possible_answers(survey_id)
+        # Set the name of the tables.
+        metadata_name = ('survey_' + survey_id + '_metadata').to_sym
+
+        # Create the metadata table.
+        metadata_table = @store[metadata_name]
+
+        return metadata_table.where(:current => true).all
+    end
+
+    def save_response(survey_id, response)
     end
 
 end
