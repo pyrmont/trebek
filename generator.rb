@@ -16,21 +16,23 @@ abort "Error: Trebek could not find the database file you specified." unless Fil
 # Get the contents of the file.
 contents = File.read(filename[:survey])
 
-# Create the parser.
-parser = Parser.new
-
 # Parse the contents.
-@survey = parser.parse contents
+questions = Parser.parse contents
+
+# Render the contents.
+@questions = Parser.render contents, questions
 
 # Create the database.
 database = Database.new filename[:database]
 
-# Set up the survey data.
-answers = parser.answers
+# Set up the name of the survey.
 survey_name = File.basename filename[:survey], '.*'
 
+# Extract all the answers
+all_answers = questions.collect{ |question| question.answers }.flatten
+
 # Save the survey data.
-@id = database.save_survey survey_name, answers
+@id = database.save_survey survey_name, all_answers
 
 # Set the title of the page.
 @title = 'Trebek Asks You the Questions!'
@@ -42,6 +44,6 @@ erb = ERB.new File.read('./templates/_frame.erb')
 output = erb.result
 
 # Save the output in the built/ folder using the survey_id.
-File.open('./built/survey_' + @id + '.html', 'w') do |file|
+File.open('./built/survey_' + @id.to_s + '.html', 'w') do |file|
     file.write output
 end

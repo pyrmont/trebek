@@ -1,6 +1,9 @@
 source 'http://rubygems.org'
 
 # Gems required by the generator and the server.
+group :test do
+    gem 'rspec'
+end
 
 # Gems required by the generator only.
 gem 'redcarpet'

@@ -15,7 +15,10 @@ class Database
         return metadata_table.where(:current => true).all
     end
 
-    def save_survey(survey_name, answers)
+    def save_survey(survey_name, all_answers)
+        # Prune answers.
+        answers = prune_answers all_answers
+
         # Create the surveys table.
         create_table :surveys
 
@@ -43,8 +46,8 @@ class Database
 
             # For each answer either update the existing record in the metadata table or create a new record.
             answers.each do |answer|
-                unless 1 == metadata_table.where(:answer_name => answer.answer_id).update(:survey_id => survey_id, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true, :updated_at => DateTime.now)
-                    metadata_table.insert :survey_id => survey_id, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true, :created_at => DateTime.now
+                unless 1 == metadata_table.where(:answer_name => answer.name).update(:survey_id => survey_id, :answer_name => answer.name, :answer_text => answer.text, :question_text => answer.question, :title_text => answer.title, :format => answer.format, :required => answer.required?, :current => true, :updated_at => DateTime.now)
+                    metadata_table.insert :survey_id => survey_id, :answer_name => answer.name, :answer_text => answer.text, :question_text => answer.question, :title_text => answer.title, :format => answer.format, :required => answer.required?, :current => true, :created_at => DateTime.now
                 end
             end
 
@@ -56,8 +59,8 @@ class Database
 
             # For each answer, insert a column in the responses table if it doesn't exist.
             answers.each do |answer|
-                unless columns.include? answer.answer_id.to_sym
-                    @store.add_column table_name, answer.answer_id, String, :text => true
+                unless columns.include? answer.name.to_sym
+                    @store.add_column table_name, answer.name, String, :text => true
                 end
             end
         else
@@ -69,7 +72,7 @@ class Database
 
             # Insert the metadata for each answer into the metadata table.
             answers.each do |answer|
-                metadata_table.insert :survey_id => survey_id, :answer_name => answer.answer_id, :answer_text => answer.answer_text, :question_text => answer.question_text, :title_text => answer.title_text, :format => answer.format, :required => answer.required?, :current => true, :created_at => DateTime.now
+                metadata_table.insert :survey_id => survey_id, :answer_name => answer.name, :answer_text => answer.text, :question_text => answer.question, :title_text => answer.title, :format => answer.format, :required => answer.required, :current => true, :created_at => DateTime.now
             end
 
             # Create the table for the answer responses.
@@ -80,7 +83,7 @@ class Database
 
             # Insert a column for each answer.
             answers.each do |answer|
-                @store.add_column table_name, answer.answer_id, String, :text => true
+                @store.add_column table_name, answer.name, String, :text => true
             end
         end
 
@@ -119,6 +122,28 @@ class Database
     end
 
     private
+
+        def prune_answers(all_answers)
+            # Create an empty array.
+            pruned_answers = []
+
+            # Create a nil object.
+            previous_name = nil
+
+            all_answers.each do |answer|
+                # Set the answer text to be the empty string if this is a select or radio.
+                answer.text = nil if answer.type == :select || answer.type == :radio
+
+                # Add the answer to the pruned answers.
+                pruned_answers.push answer unless answer.name == previous_name
+
+                # Set the previous name to be this element.
+                previous_name = answer.name
+            end
+
+            # Return the pruned answers.
+            pruned_answers
+        end
 
         def create_table(table_type, survey_id = nil)
             # Unless the table_type is :surveys, return nil if survey_id wasn't provided.

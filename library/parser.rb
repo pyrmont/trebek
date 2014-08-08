@@ -1,246 +1,565 @@
 require 'erb'
 require 'redcarpet'
 
-class Parser
+module Parser
 
-    attr_reader :answers
+    extend self
 
-    Answer = Struct.new :answer_id, :answer_text, :question_text, :title_text, :format, :required?
+    Question = Struct.new :name, :text, :instruction, :required, :answers
+    Answer = Struct.new :name, :type, :text, :question, :required, :title, :format, :selected, :delim
 
-    def initialize
-        # Set up the regular expressions we'll use.
-        @regex = {}
-        @regex[:question] = /^(Q\.(\*)?\s+((?:(?!\n|{).)*)(?:{((?:(?!\n|}).)*)})?\n(?:!\s+((?:(?!\n).)*)\n)?(?:A.\s+)?((?:(?!\n\n).)*))/m
-        @regex[:row] = /^((.*):\s+(.*))/
-        @regex[:select] = /((?:-(\*|-)-)\s+((?:(?!-(?:\*|-)-).)*))/
-        @regex[:radio] = /((?:\((\*| )\))\s+((?:(?!\((?:\*| )\)).)*))/
-        @regex[:checkbox] = /((?:\[(\*| )\])\s+((?:(?!\[(?:\*| )\]).)*))/
-        @regex[:area] = /(_{3,}\n_{3,}(?:\n_{3,})*)/m
-        @regex[:line] = /(.*(_{3,})(?:\((.*)\))?.*)/
+    @@regex = {
+        :question       => /^(Q\.(\*)?\s+((?:(?!\n|{).)*)(?:{((?:(?!\n|}).)*)})?\n(?:!\s+((?:(?!\n).)*)\n)?(?:A.\s+)?((?:(?!\n\n).)*))/m,
+        :row            => /^((.*):\s+(.*))/,
+        :select         => /((?:-(\*|-)-)\s+((?:(?!-(?:\*|-)-).)*))/,
+        :radio          => /((?:\((\*| )\))\s+((?:(?!\((?:\*| )\)).)*))/,
+        :checkbox       => /((?:\[(\*| )\])\s+((?:(?!\[(?:\*| )\]).)*))/,
+        :area           => /(_{3,}\n_{3,}(?:\n_{3,})*)/m,
+        :line           => /(.*(_{3,})(?:\((.*)\))?.*)/
+    }
 
-        # Set up the HTML tags we'll use.
-        @html = {}
-        @html[:question] = %{<div class="question <%= requirement_class %>"><%= question_formatted %></div>}
-        @html[:instruction] = %{<div class="instruction"><%= instruction_formatted %></div>}
-        @html[:answers] = %{<div class="answers"><%= answers %></div>}
-        @html[:row] = %{<div class="row"><div class="title"><%= title_formatted %></div><div><%= row_answers %></div></div>}
-        @html[:select] = %{<select id="<%= id_attribute %>" name="<%= name_attribute %>"><%= answers %></select>}
-        @html[:option] = %{<option value="<%= answer_text %>" <%= selected_attribute %>><%= answer_text %></option>}
-        @html[:checkradio] = %{<input id="<%= id_attribute + '_' + input_number.to_s %>" name="<%= name_attribute + optional_brackets %>" type="<%= answer_type.to_s %>" value="<%= answer_text %>" <%= selected_attribute %>><label for="<%= id_attribute + '_' + input_number.to_s %>"><%= answer_formatted %></label>}
-        @html[:area] = %{<textarea id="<%= id_attribute %>" name="<%= name_attribute %>"></textarea>}
-        @html[:line] = %{<input id="<%= id_attribute %>" name="<%= name_attribute %>" type="<%= type_attribute %>">}
+    @@html = {
+        :question       => %{<div class="question <%= requirement_class %>"><%= question_formatted %></div>},
+        :instruction    => %{<div class="instruction"><%= instruction_formatted %></div>},
+        :answers        => %{<div class="answers"><%= answers_formatted %></div>},
+        :row            => %{<div class="row"><div class="title"><%= title_formatted %></div><div><%= row_formatted %></div></div>},
+        :select         => %{<select id="<%= id_attribute %>" name="<%= name_attribute %>"><%= answers_formatted %></select>},
+        :option         => %{<option value="<%= answer_text %>" <%= selected_attribute %>><%= answer_text %></option>},
+        :radio          => %{<input id="<%= id_attribute %>" name="<%= name_attribute %>" type="radio" value="<%= answer_text %>" <%= selected_attribute %>><label for="<%= id_attribute %>"><%= answer_formatted %></label>},
+        :checkbox       => %{<input id="<%= id_attribute %>" name="<%= name_attribute %>" type="checkbox" value="<%= answer_text %>" <%= selected_attribute %>><label for="<%= id_attribute %>"><%= answer_formatted %></label>},
+        :area           => %{<textarea id="<%= id_attribute %>" name="<%= name_attribute %>"></textarea>},
+        :line           => %{<input id="<%= id_attribute %>" name="<%= name_attribute %>" type="<%= type_attribute %>">}
+    }
 
-        # Set up separate ERB renderers for each tag.
-        @tags = {}
-        @html.each do |key, element|
-            @tags[key] = ERB.new element
-        end
-
-        # Set up the Markdown renderer.
-        renderer = Redcarpet::Render::HTML.new(options = {})
-        @markdown = Redcarpet::Markdown.new(renderer, extensions = {})
-
-        # Set up the array of answers.
-        @answers = []
-    end
+    @@markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML.new(options = {}), extensions = {})
 
     def parse(contents)
-        # Parse and replace the questions.
-        result = replace_questions contents
-        result = replace_markdown result, false
-    end
+        # Create an empty array.
+        questions = []
 
-    def replace_questions(contents)
-        # Questions begin at 0 because we increment as soon as we enter the block.
-        question_number = 0
-        result = contents.gsub @regex[:question] do |question|
-            # Increment the question number.
-            question_number = question_number + 1
+        # Set the question number.
+        question_number = 1
 
+        contents.scan @@regex[:question] do |match|
             # Assign meaningful variables for each captured group.
-            requirement = $2
-            question_text = $3
-            name_attribute = $4
-            instruction_text = $5
-            answers = $6
+            c = { :requirement => $2, :question_text => $3, :name_attribute => $4, :instruction_text => $5, :answers_text => $6 }
 
-            # Convert Markdown in the question text and the instruction text.
-            question_formatted = replace_markdown question_text
-            instruction_formatted = replace_markdown instruction_text
+            # Create an instance of the question struct.
+            question = Question.new
 
-            # Check the name attribute is set and if not use the incremented generic name.
-            name_attribute = (name_attribute) ? name_attribute : 'answer_' + question_number.to_s
+            # Set the question text and the instuction text.
+            question.text = c[:question_text]
+            question.instruction = c[:instruction_text]
 
-            # Set the ID attribute to be equal to the name_attribute.
-            id_attribute = name_attribute
+            # Set the name attribute is set and if not use the incremented generic name.
+            question.name = (c[:name_attribute]) ? c[:name_attribute] : 'answer_' + question_number.to_s
 
-            # Set the class name for whether the question must be answered or not.
-            question_requirement = (requirement == '*') ? true : false
-            requirement_class = (question_requirement) ? 'required' : ''
-
-            # Set the HTML for the question.
-            question_html = @tags[:question].result(binding)
-
-            # Set the HTML for the instruction.
-            instruction_html = (instruction_formatted) ? @tags[:instruction].result(binding) : ''
+            # Set whether the question is required.
+            question.required = (c[:requirement] == '*') ? true : false
 
             # Parse and replace the group of answers or answers.
-            answers = (is_group? answers) ? replace_group(answers, question_text, question_requirement, name_attribute, id_attribute) : replace_answers(answers, question_text, question_requirement, nil, name_attribute, id_attribute)
+            question.answers = parse_answers c[:answers_text], question
 
-            # Set the HTML for the answers.
-            answers_html = @tags[:answers].result(binding)
+            # Push the question struct onto the questions array.
+            questions.push question
 
-            # Return the HTML.
+            # Increment the question number.
+            question_number = question_number + 1
+        end
+
+        # Return the questions.
+        questions
+    end
+
+    def render(contents, questions)
+        # Set the tags.
+        tags = {}
+        @@html.each do |key, element|
+            tags[key] = ERB.new element
+        end
+
+        # Set the counter.
+        counter = 0
+
+        contents.gsub! @@regex[:question] do |match|
+            # Set the question.
+            question = questions[counter]
+
+            # Replace the question. Replace the instruction. Replace the answers.
+            question_html = replace_question question, tags
+            instruction_html = replace_instruction question, tags
+            answers_html = replace_answers question, tags
+
+            # Increment the counter.
+            counter = counter + 1
+
+            # Return the replaced text.
             question_html + instruction_html + answers_html
         end
-        return result
+
+        # Return the replaced contents.
+        convert_markdown contents, false
     end
 
-    def replace_group(answers, question_text, question_requirement, name_attribute, id_attribute)
-        row_number = 0
-        answers.gsub! @regex[:row] do |row|
-            # Increment the row number.
-            row_number = row_number + 1
+    private
 
-            # Assign meaningful variables for each captured group.
-            row_title = $2
-            row_answers = $3
+        def parse_answers(contents, question, level = 0, title = nil)
+            # Create an empty array.
+            answers = []
 
-            # Convert Markdown in the row title.
-            title_formatted = replace_markdown row_title
+            # Check if we are in a group only if level is zero (otherwise we're already in a group).
+            answers = parse_group contents, question, level if level == 0
 
-            # Replace the rows with the appropriate HTML.
-            row_answers = replace_answers row_answers, question_text, question_requirement, row_title, name_attribute + '[' + row_title.strip.downcase.gsub(/[[:punct:]]/, '').gsub(/\s+/, '_') + ']', id_attribute + '_' + row_number.to_s
+            # If answers is non-empty, we can return.
+            return answers if answers.count > 0
 
-            # Add the row answers to the title of the row.
-            row_html = @tags[:row].result(binding)
-        end
-        return answers
-    end
-
-    def replace_answers(answers, question_text, question_requirement, title_text, name_attribute, id_attribute)
-        # Set the default answer format and text.
-        answer_format = 'Text'
-        answer_text = ''
-
-        # Perform replacement based on the answer type.
-        answer_type = get_type answers
-        case answer_type
-        when :select
-            answers.gsub! @regex[answer_type] do |answer|
-                # Assign meaningful variables for each captured group.
-                selected = $2
-                answer_text = $3
-
-                # Set the selected attribute.
-                selected_attribute = (selected == '*') ? 'selected' : ''
-
-                # Set the HTML for the answer.
-                answer_html = @tags[:option].result(binding)
+            case get_answer_type contents
+            when :select
+                answers = parse_select contents, question, level, title
+            when :radio
+                answers = parse_radio contents, question, level, title
+            when :checkbox
+                answers = parse_checkbox contents, question, level, title
+            when :area
+                answers = parse_area contents, question, level, title
+            when :line
+                answers = parse_line contents, question, level, title
             end
 
-            # Save the answer.
-            @answers.push Answer.new name_attribute, '', question_text, title_text, answer_format, question_requirement
+            # Return the answers.
+            answers
+        end
 
-            # Set the HTML for the answer.
-            answers = @tags[:select].result(binding)
-        when :radio, :checkbox
+        def parse_group(contents, question, level = 0)
+            # Create an empty array.
+            answers = []
+
+            # Increment the level.
+            level = level + 1
+
+            # Set the row number.
+            row_number = 0
+
+            contents.scan @@regex[:row] do |row|
+                # Assign meaningful variables for each captured group.
+                c = { :title => $2, :answers_text => $3 }
+
+                # Concatenate the array onto the existing array.
+                answers.concat(parse_answers c[:answers_text], question, level, c[:title])
+
+                # Increment the row number.
+                row_number = row_number + 1
+            end
+
+            # Return the answers.
+            answers
+        end
+
+        def parse_select(contents, question, level, title)
+            # There's no fundamental difference between select, radio and checkbox so handle it in a helper method.
+            parse_selectable contents, question, level, title, :select
+        end
+
+        def parse_radio(contents, question, level, title)
+            # There's no fundamental difference between select, radio and checkbox so handle it in a helper method.
+            parse_selectable contents, question, level, title, :radio
+        end
+
+        def parse_checkbox(contents, question, level, title)
+            # There's no fundamental difference between select, radio and checkbox so handle it in a helper method.
+            parse_selectable contents, question, level, title, :checkbox
+        end
+
+        def parse_area(contents, question, level, title)
+            # Create an empty array.
+            answers = []
+
+            contents.scan @@regex[:area] do |match|
+                # Create an instance of the answer struct.
+                answer = Answer.new
+
+                # Set the name based on the level.
+                answer.name = (level > 0) ? question.name + '[' + title + ']' : question.name
+
+                # Set the answer type, answer text, question text, mandatoriness, answer title and answer format.
+                answer.type = :area
+                answer.question = question.text
+                answer.required = question.required
+                answer.title = title
+                answer.format = 'Text'
+
+                # Push the answer struct onto the answers array.
+                answers.push answer
+            end
+
+            # Return the answers.
+            answers
+        end
+
+        def parse_line(contents, question, level, title)
+            # Create an empty array.
+            answers = []
+
+            contents.scan @@regex[:line] do |match|
+                # Assign meaningful variables for each captured group.
+                c = { :text => $1, :delim => $2, :format => $3 }
+
+                # Create an instance of the answer struct.
+                answer = Answer.new
+
+                # Set the name based on the level.
+                answer.name = (level > 0) ? question.name + '[' + title + ']' : question.name
+
+                # Set the answer type, answer text, question text, mandatoriness, answer title and answer format.
+                answer.type = :line
+                answer.text = c[:text].strip
+                answer.question = question.text
+                answer.required = question.required
+                answer.title = title
+                answer.format = (c[:format]) ? c[:format] : 'Text'
+                answer.delim = c[:delim]
+
+                # Push the answer struct onto the answers array.
+                answers.push answer
+            end
+
+            # Return the answers.
+            answers
+        end
+
+        def parse_selectable(contents, question, level, title, type)
+            # Create an empty array.
+            answers = []
+
+            # Set the input number.
             input_number = 0
-            answers.gsub! @regex[answer_type] do |answer|
+
+            contents.scan @@regex[type] do |match|
+                # Assign meaningful variables for each captured group.
+                c = { :selected => $2, :text => $3 }
+
+                # Create an instance of the answer struct.
+                answer = Answer.new
+
+                # Set the name based on the level.
+                answer.name = (level > 0) ? question.name + '[' + title.strip.downcase.gsub(/[[:punct:]]/, '').gsub(/\s+/, '_') + ']' : question.name
+
+                # If this is a checkbox, there can be multiple values so add the input_number to the name.
+                answer.name = (type == :checkbox) ? answer.name + '[' + input_number.to_s + ']' : answer.name
+
+                # Set the answer type, answer text, question text, mandatoriness, answer title and answer format.
+                answer.type = type
+                answer.text = c[:text].strip
+                answer.question = question.text
+                answer.required = question.required
+                answer.title = title
+                answer.format = 'Text'
+
+                # Set the selected attribute.
+                answer.selected = (c[:selected] == '*') ? true : false
+
+                # Push the answer struct onto the answers array.
+                answers.push answer
+
                 # Increment the input number.
                 input_number = input_number + 1
+            end
 
-                # Assign meaningful variables for each captured group.
-                selected = $2
-                answer_text = $3.strip
+            # Return the answers.
+            answers
+        end
 
-                # Convert Markdown in the answer text.
-                answer_formatted = replace_markdown answer_text
+        def replace_questions(contents, questions)
+            # Set the tags.
+            tags = {}
+            @@html.each do |key, element|
+                tags[key] = ERB.new element
+            end
 
-                # Set the selected attribute.
-                selected_attribute = (selected == '*') ? 'selected' : ''
+            # Set the counter.
+            counter = 0
 
-                # Checkboxes need to use square brackets to identify the name.
-                optional_brackets = (answer_type == :checkbox) ? '[]' : ''
+            contents.gsub! @@regex[:question] do |match|
+                # Set the question.
+                question = questions[counter]
 
-                # Set the HTML for the answer.
-                answer_html = @tags[:checkradio].result(binding)
+                # Replace the question. Replace the instruction. Replace the answers.
+                question_html = replace_question question, tags
+                instruction_html = replace_instruction question, tags
+                answers_html = replace_answers question, tags
 
-                # Save the answer.
-                if answer_type == :checkbox
-                    answer_id = name_attribute + '[' + (input_number - 1).to_s + ']'
-                    @answers.push Answer.new answer_id, answer_text, question_text, title_text, answer_format, question_requirement
-                elsif answer_type == :radio && input_number == 1
-                    answer_id = name_attribute
-                    @answers.push Answer.new answer_id, '', question_text, title_text, answer_format, question_requirement
+                # Increment the counter.
+                counter = counter + 1
+
+                # Return the replaced text.
+                question_html + instruction_html + answers_html
+            end
+
+            # Return the replaced contents.
+            contents
+        end
+
+        def replace_question(question, tags)
+            # Format the question.
+            question_formatted = convert_markdown question.text
+
+            # Set whether the question is required.
+            requirement_class = (question.required) ? 'required' : ''
+
+            # Set the HTML.
+            question_html = tags[:question].result(binding)
+        end
+
+        def replace_instruction(question, tags)
+            # Format the instruction.
+            instruction_formatted = convert_markdown question.instruction
+
+            # Set the HTML.
+            instruction_html = tags[:instruction].result(binding)
+        end
+
+        def replace_answers(question, tags)
+            # Set an empty string for the answers.
+            answers_formatted = ''
+
+            # If group, return answers_html.
+            return replace_group(question, tags) if get_question_type(question) == :group
+
+            case get_question_type question
+            when :select
+                answers_formatted = replace_select question, tags, question.answers
+            when :radio
+                answers_formatted = replace_radio question, tags, question.answers
+            when :checkbox
+                answers_formatted = replace_checkbox question, tags, question.answers
+            when :area
+                answers_formatted = replace_area question, tags, question.answers
+            when :line
+                answers_formatted = replace_line question, tags, question.answers
+            end
+
+            # Set the HTML.
+            answers_html = tags[:answers].result(binding)
+        end
+
+        def replace_group(question, tags)
+            # Create an empty string for the answers.
+            answers_formatted = ''
+
+            # Put the answers into rows.
+            rows = get_rows question.answers
+
+            # Create an empty string for the row.
+            row_formatted = ''
+
+            rows.each do |row|
+                # Format the title.
+                title_formatted = convert_markdown row[0].title
+
+                case row[0].type
+                when :radio
+                    row_formatted = replace_radio question, tags, row
+                when :checkbox
+                    row_formatted = replace_checkbox question, tags, row
                 end
 
-                # Return the HTML.
-                answer_html
+                # Set the HTML.
+                row_html = tags[:row].result(binding)
+
+                # Add the HTML to the answers_formatted variable.
+                answers_formatted = answers_formatted + row_html
             end
-        when :area
-            answers.gsub! @regex[answer_type] do |answer|
-                # Set the HTML for the answer.
-                answer_html = @tags[:area].result(binding)
 
-                # Save the answer.
-                @answers.push Answer.new name_attribute, answer_text, question_text, title_text, answer_format, question_requirement
+            # Set the HTML.
+            answers_html = tags[:answers].result(binding)
+        end
 
-                # Return the HTML.
-                answer_html
+        def replace_select(question, tags, answers)
+            # Create an empty string.
+            answers_formatted = ''
+
+            # Create empty name and ID attributes.
+            name_attribute = ''
+            id_attribute = ''
+
+            answers.each do |answer|
+                # Set the variables for the ERB renderer.
+                id_attribute = get_id_attribute answer.name
+                name_attribute = answer.name
+                selected_attribute = (answer.selected) ? 'selected' : ''
+                answer_text = answer.text
+
+                # Format the option element.
+                option_formatted = tags[:option].result(binding)
+
+                # Add the option element to the other elements.
+                answers_formatted = answers_formatted + option_formatted
             end
-        when :line
-            answers.gsub! @regex[answer_type] do |answer|
-                # Assign meaningful variables for each captured group.
-                line_delim = $2
-                line_type = $3
 
-                # Set the HTML for the input tag.
-                type_attribute = (line_type) ? line_type.downcase : 'text'
-                line_html = @tags[:line].result(binding)
+            # Format and return the answers.
+            answers_formatted = tags[:select].result(binding)
+        end
 
-                # Set the answer format based on the type attribute.
-                answer_format = type_attribute.capitalize
+        def replace_radio(question, tags, answers)
+            # There's no fundamental difference between radio and checkbox so use a helper method.
+            replace_selectable question, tags, answers
+        end
 
-                # Set the HTML for the answer.
-                line_replace = (line_type) ? line_delim + '(' + line_type + ')' : line_delim
-                answer_html = answer.gsub(line_replace, line_html)
+        def replace_checkbox(question, tags, answers)
+            # There's no fundamental difference between radio and checkbox so use a helper method.
+            replace_selectable question, tags, answers
+        end
 
-                # Convert Markdown in the answer.
-                answer_html = replace_markdown answer_html
+        def replace_area(question, tags, answers)
+            # Create an empty string.
+            answers_formatted = ''
 
-                # Save the answer.
-                @answers.push Answer.new name_attribute, answer_text, question_text, title_text, answer_format, question_requirement
+            answers.each do |answer|
+                # Set the variables for the ERB renderer.
+                name_attribute = answer.name
+                id_attribute = get_id_attribute answer.name
 
-                # Return the HTML.
-                answer_html
+                # Format the area element.
+                area_formatted = tags[:area].result(binding)
+
+                # Add the area element to the other elements.
+                answers_formatted = answers_formatted + area_formatted
+            end
+
+            # Return the answers (there should only be one).
+            answers_formatted
+        end
+
+        def replace_line(question, tags, answers)
+            # Create an empty string.
+            answers_formatted = ''
+
+            answers.each do |answer|
+                # Set the variables for the ERB renderer.
+                name_attribute = answer.name
+                id_attribute = get_id_attribute answer.name
+                type_attribute = answer.format.downcase
+
+                # Format the line element.
+                line_formatted = tags[:line].result(binding)
+
+                # Format the answer.
+                answer_formatted = convert_markdown(answer.text.gsub answer.delim, line_formatted)
+
+                # Add the area element to the other elements.
+                answers_formatted = answers_formatted + answer_formatted
+            end
+
+            # Return the answers (there should only be one).
+            answers_formatted
+        end
+
+        def replace_selectable(question, tags, answers)
+            # Create an empty string.
+            answers_formatted = ''
+
+            # Set the input_number.
+            input_number = 0
+
+            answers.each do |answer|
+                # Set the variables for the ERB renderer.
+                case answer.type
+                when :radio
+                    name_attribute = answer.name
+                    id_attribute = get_id_attribute(answer.name) + '_' + input_number.to_s
+                when :checkbox
+                    name_attribute = answer.name.gsub(/(\[((?:\d)*)\]$)/, '[]')
+                    id_attribute = get_id_attribute(answer.name)
+                end
+                selected_attribute = (answer.selected) ? 'selected' : ''
+                answer_text = answer.text
+                answer_formatted = convert_markdown answer.text
+
+                # Format the radio/checkbox element.
+                selectable_formatted = tags[answer.type].result(binding)
+
+                # Add the radio/checkbox element to the other elements.
+                answers_formatted = answers_formatted + selectable_formatted
+
+                # Increment the counter.
+                input_number = input_number + 1
+            end
+
+            # Return the answers.
+            answers_formatted
+        end
+
+        def get_answer_type(contents)
+            # Select the input type based on the first character in the contents. If not one of the three, type will be nil.
+            type = { :select => '-', :radio => '(', :checkbox => '['}.key contents[0]
+            return type if type
+
+            # If type is nil, decide if this is a text area or a text field.
+            if contents.scan(@@regex[:area]).length > 0
+                return :area
+            elsif contents.scan(@@regex[:line]).length > 0
+                return :line
             end
         end
 
-        return answers
-    end
+        def get_question_type(question)
+            # Get an answer.
+            answer = question.answers[0]
 
-    def replace_markdown(text, inline = true)
-        # If there is no text, return.
-        return text unless text
+            # Return :group if there is a title.
+            return :group if answer.title
 
-        text = @markdown.render text
-        text = (inline) ? text.gsub(/^<p>/, '').gsub(/<\/p>$/, '') : text
-    end
-
-    def is_group?(answers)
-        return answers.scan(@regex[:row]).length > 0
-    end
-
-    def get_type(answers)
-        type = { :select => '-', :radio => '(', :checkbox => '['}.key answers[0]
-        if type
-            return type
-        elsif answers.scan(@regex[:area]).length > 0
-            return :area
-        elsif answers.scan(@regex[:line]).length > 0
-            return :line
+            # Otherwise return the type.
+            answer.type
         end
-    end
 
+        def get_rows(answers)
+            # Create a nil object for the previous title.
+            previous_title = nil
+
+            # Create an empty array.
+            rows = []
+            row = []
+
+            answers.each do |answer|
+                if previous_title && previous_title != answer.title
+                    # Add this row to the rows.
+                    rows.push row
+
+                    # Reset the array.
+                    row = []
+                end
+
+                # Add the answer to this row.
+                row.push answer
+
+                # Set the previous_title to be the current title.
+                previous_title = answer.title
+            end
+
+            # Push the final row onto the end.
+            rows.push row
+        end
+
+        def get_id_attribute(name_attribute)
+            # Replace [something] with _something.
+            id_attribute = name_attribute.gsub /(\[((?:\w)*)\])/ do |match|
+                # Assign meaningful variables to the captured group.
+                without_brackets = $2
+
+                # Replace the term in brackets with the term preceded by an underscore.
+                '_' + without_brackets
+            end
+        end
+
+        def convert_markdown(text, inline = true)
+            # If there is no text, return.
+            return text unless text
+
+            # Render the text.
+            text = @@markdown.render text
+
+            # Remove the paragraph tags if this is an inline conversion.
+            text = (inline) ? text.gsub(/^<p>/, '').gsub(/<\/p>$/, '') : text
+        end
 end
