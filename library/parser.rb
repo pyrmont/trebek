@@ -179,7 +179,7 @@ module Parser
                 answer = Answer.new
 
                 # Set the name based on the level.
-                answer.name = (level > 0) ? question.name + '[' + title + ']' : question.name
+                answer.name = get_answer_name question.name, level, title
 
                 # Set the answer type, answer text, question text, mandatoriness, answer title and answer format.
                 answer.type = :area
@@ -208,7 +208,7 @@ module Parser
                 answer = Answer.new
 
                 # Set the name based on the level.
-                answer.name = (level > 0) ? question.name + '[' + title + ']' : question.name
+                answer.name = get_answer_name question.name, level, title
 
                 # Set the answer type, answer text, question text, mandatoriness, answer title and answer format.
                 answer.type = :line
@@ -242,7 +242,7 @@ module Parser
                 answer = Answer.new
 
                 # Set the name based on the level.
-                answer.name = (level > 0) ? question.name + '[' + title.strip.downcase.gsub(/[[:punct:]]/, '').gsub(/\s+/, '_') + ']' : question.name
+                answer.name = get_answer_name question.name, level, title
 
                 # If this is a checkbox, there can be multiple values so add the input_number to the name.
                 answer.name = (type == :checkbox) ? answer.name + '[' + input_number.to_s + ']' : answer.name
@@ -361,6 +361,8 @@ module Parser
                     row_formatted = replace_radio question, tags, row
                 when :checkbox
                     row_formatted = replace_checkbox question, tags, row
+                when :line
+                    row_formatted = replace_line question, tags, row
                 end
 
                 # Set the HTML.
@@ -487,6 +489,10 @@ module Parser
 
             # Return the answers.
             answers_formatted
+        end
+
+        def get_answer_name(question_name, level, title)
+            answer_name = (level > 0) ? question_name + '[' + title.strip.downcase.gsub(/[[:punct:]]/, '').gsub(/\s+/, '_') + ']' : question_name
         end
 
         def get_answer_type(contents)
