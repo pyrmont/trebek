@@ -47,6 +47,10 @@ post '/submit' do
     end
 end
 
+get '/admin' do
+
+end
+
 get '/error' do
     'There is a weird error. We will investigate.'
 end
