@@ -1,0 +1,25 @@
+Survey Ijime
+
+	Name: japanese
+	Type: Radio
+	Question: Are you Japanese?
+	Answer 1: Yes
+	Answer 2: No
+	Selected: 1
+
+	Name: experience
+	Type: Radio
+	Question: Have you been bullied before?
+	Answer 1: Yes
+	Answer 2: No
+	Selected: 2
+
+	Name: location
+	Type: Checkbox
+	Question: Where were you bullied?
+	Answer 1: Home
+	Answer 2: School
+	Answer 3: University
+	Answer 4: Work
+
+End Survey
