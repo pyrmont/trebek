@@ -11,6 +11,12 @@ config/environment.rb
 # Files used in development
 development
 
+# Rails
+/db/*.sqlite3
+/db/*.sqlite3-journal
+/log/*.log
+/tmp
+
 # The usual suspects
 Thumbs.db
 Desktop.ini
